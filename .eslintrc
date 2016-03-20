@@ -1,0 +1,22 @@
+{
+  "env": {
+    "browser": true,
+  },
+  "rules": {
+    "camelcase": 2,
+    "curly": 2,
+    "brace-style": [2, "1tbs"],
+    "quotes": [2, "single"],
+    "space-in-brackets": [2, "never"],
+    "space-infix-ops": 2,
+    "arrow-parens": 0,
+    "semi": [2, "always"],
+    "space-before-function-paren": [1, "always"],
+    "space-before-blocks": [0, "always"],
+    "keyword-spacing": 0,
+    "no-proto": 1,
+    "no-new": 1,
+    "indent": [0, 0]
+  }
+}
+
