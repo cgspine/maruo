@@ -600,7 +600,18 @@
             };
 
             return output;
-        })()
+        })(),
+        
+        contains :function (root, el) {
+            try { //IE6-8,游离于DOM树外的文本节点，访问parentNode有时会抛错
+                while ((el = el.parentNode))
+                    if (el === root)
+                        return true
+                return false
+            } catch (e) {
+                return false
+            }
+        }
     };
 
 
@@ -671,6 +682,8 @@
     var cssMap = {
         'float' : w3c ? 'cssFloat' : 'styleFloat'
     };
+    //这里的属性不需要自行添加px
+    maruo.cssNumber = $.oneObject("columnCount,fillOpacity,fontSizeAdjust,fontWeight,lineHeight,opacity,orphans,widows,zIndex,zoom,rotate");
 
     maruo.transitionend = _getTransitionPropertiesEndAndPrefix.end;
     
@@ -695,7 +708,101 @@
             node.style[name] = value
         } catch (e) {
         }
+    };
+    
+    if (window.getComputedStyle) {
+        cssHooks["@:get"] = function (node, name) {
+            if (!node || !node.style) {
+                throw new Error("要求传入一个节点 " + node)
+            }
+            //Firefox 3.6时，其frame中需要使用document.defaultView去获取window对象，才能使用其getComputedStyle方法
+            var dom = node.ownerDocument,styles,ret;
+            if(dom.defaultView.opener){
+                styles = dom.defaultView.getComputedStyle(node,null);
+            }else{
+                styles = window.getComputedStyle(node,null);
+            }
+            if (styles) {
+                //IE9下"filter"只能通过getPropertyValue取值.https://github.com/jquery/jquery/commit/9ced0274653b8b17ceb6b0675e2ae05433dcf202
+                ret = styles.getPropertyValue(name) || styles[name];
+                var style = node.style;//这里只有firefox与IE10会智能处理未插入DOM树的节点的样式,它会自动找内联样式
+                if (ret === '' && domHelper.contains(node.ownerDocument,node)) {
+                    ret = style[name]; //其他浏览器需要我们手动取内联样式
+                }
+            }
+            return ret;
+        };
+    } else {
+        var rnumnonpx = /^([+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|))(?!px)[a-z%]+$/i;
+        var rposition = /^(top|right|bottom|left)$/;
+        var ralpha = /alpha\([^)]*\)/i;
+        var ie8 = !!window.XDomainRequest;
+        var salpha = "DXImageTransform.Microsoft.Alpha";
+        var border = {
+            thin: ie8 ? '1px' : '2px',
+            medium: ie8 ? '3px' : '4px',
+            thick: ie8 ? '5px' : '6px'
+        };
+        cssHooks["@:get"] = function (node, name) {
+            var currentStyle = node.currentStyle;
+            var ret = currentStyle[name];
+            //IE的currentStyle得到的是Cascaded Style而不是Computed Style
+            //http://erik.eae.net/archives/2007/07/27/18.54.15/#comment-102291
+            if (rnumnonpx.test(ret) && !rposition.test(ret)) {
+                var style = node.style;
+
+                // Remember the original values
+                var left = style.left;
+                var rs = node.runtimeStyle;
+                var rsLeft = rs && rs.left;
+
+                // Put in the new values to get a computed value out
+                if ( rsLeft ) {
+                    rs.left = currentStyle.left;
+                }
+                //fontSize的分支见http://bugs.jquery.com/ticket/760
+                style.left = name === "fontSize" ? "1em" : (ret || 0);
+                ret = style.pixelLeft + "px";
+
+                // Revert the changed values
+                style.left = left;
+                if ( rsLeft ) {
+                    rs.left = rsLeft;
+                }
+            }
+            if (ret === "medium") {
+                name = name.replace("Width", "Style")
+                //border width 默认值为medium，即使其为0"
+                if (currentStyle[name] === "none") {
+                    ret = "0px"
+                }
+            }
+            return ret === "" ? "auto" : border[ret] || ret
+        };
+
+        cssHooks["opacity:set"] = function (node, name, value) {
+            var style = node.style;
+            var opacity = isFinite(value) && value <= 1 ? "alpha(opacity=" + value * 100 + ")" : "";
+            var filter = style.filter || "";
+            style.zoom = 1;//让元素获得hasLayout
+            //不能使用以下方式设置透明度
+            //node.filters.alpha.opacity = value * 100
+            style.filter = (ralpha.test(filter) ?
+                filter.replace(ralpha, opacity) :
+            filter + " " + opacity).trim()
+            if (!style.filter) {
+                style.removeAttribute("filter")
+            }
+        }
+        cssHooks["opacity:get"] = function (node) {
+            //这是最快的获取IE透明值的方式，不需要动用正则了！
+            var alpha = node.filters.alpha || node.filters[salpha],
+                op = alpha && alpha.enabled ? alpha.opacity : 100;
+            return (op / 100) + ""; //确保返回的是字符串
+        }
     }
+    
+    
 
     maruo.css = function (node, name, value) {
         if (node instanceof maruo) {
