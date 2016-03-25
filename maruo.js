@@ -6,6 +6,7 @@
  * #全局变量
  * #全局方法
  * #静态方法
+ * #原型方法
  * #JS底层补丁
  * #DOM Helper
  * #CSS
@@ -398,6 +399,30 @@
     });
 
     /*********************************************************************
+     *                    #原型方法                                       *
+     *********************************************************************/
+
+    maruo.mix(maruo.fn, {
+        attr: function (name, value) {
+            if (arguments.length === 2) {
+                this[0].setAttribute(name, value);
+                return this;
+            }
+            return this[0].getAttribute(name);
+        },
+        css: function (name, value) {
+            if (maruo.isPlainObject(name)) {
+                for (var i in name) {
+                    maruo.css(this, i, name[i]);
+                }
+            } else {
+                var ret = maruo.css(this, name, value);
+            }
+            return ret !== void 0 ? ret : this;
+        }
+    });
+
+    /*********************************************************************
      *                    #JS底层补丁                                     *
      *********************************************************************/
 
@@ -710,6 +735,11 @@
         }
     };
     
+    var cssBoxSizing = maruo.cssName('box-sizing');
+    cssHooks['boxSizing:get'] = function (node,name) {
+        return cssBoxSizing ? cssHooks['@:get'](node,name) : doc.compatMode === 'BackCompact' ? 'border-box' : 'content-box';
+    };
+    
     if (window.getComputedStyle) {
         cssHooks["@:get"] = function (node, name) {
             if (!node || !node.style) {
@@ -732,10 +762,15 @@
             }
             return ret;
         };
+        cssHooks['opacity:get'] = function (node) {
+            var ret = cssHooks['@:get'](node,'opacity');
+            return ret === '' ? 1 : ret;
+        }
     } else {
         var rnumnonpx = /^([+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|))(?!px)[a-z%]+$/i;
         var rposition = /^(top|right|bottom|left)$/;
         var ralpha = /alpha\([^)]*\)/i;
+        var rmapper = /(\w+)_(\w+)/g;
         var ie8 = !!window.XDomainRequest;
         var salpha = "DXImageTransform.Microsoft.Alpha";
         var border = {
@@ -760,7 +795,7 @@
                 if ( rsLeft ) {
                     rs.left = currentStyle.left;
                 }
-                //fontSize的分支见http://bugs.jquery.com/ticket/760
+                //单位转换兼容详解:http://bugs.jquery.com/ticket/760
                 style.left = name === "fontSize" ? "1em" : (ret || 0);
                 ret = style.pixelLeft + "px";
 
@@ -772,7 +807,6 @@
             }
             if (ret === "medium") {
                 name = name.replace("Width", "Style")
-                //border width 默认值为medium，即使其为0"
                 if (currentStyle[name] === "none") {
                     ret = "0px"
                 }
@@ -789,11 +823,11 @@
             //node.filters.alpha.opacity = value * 100
             style.filter = (ralpha.test(filter) ?
                 filter.replace(ralpha, opacity) :
-            filter + " " + opacity).trim()
+            filter + " " + opacity).trim();
             if (!style.filter) {
                 style.removeAttribute("filter")
             }
-        }
+        };
         cssHooks["opacity:get"] = function (node) {
             //这是最快的获取IE透明值的方式，不需要动用正则了！
             var alpha = node.filters.alpha || node.filters[salpha],
@@ -801,15 +835,321 @@
             return (op / 100) + ""; //确保返回的是字符串
         }
     }
-    
-    
 
-    maruo.css = function (node, name, value) {
-        if (node instanceof maruo) {
-            node = node[0];
+    var cssAttrsForMeasure = {
+        position: "absolute",
+        visibility: "hidden",
+        display: ""
+    };
+    var cssPair = {
+        Width: ['left', 'right'],
+        Height: ['top', 'bottom']
+    };
+    function collectHiddenAndShow(node,arr) {
+        if (node && node.nodeType === 1 && node.offsetWidth <= 0) {//opera.offsetWidth可能小于0
+            if (maruo.css(node,'display') === 'none') {
+                var obj = {
+                    node : node
+                }
+                for (var name in cssAttrsForMeasure) {
+                    obj[name] = node.style[name];
+                    node.style[name] = cssAttrsForMeasure[name] || maruo.parseDisplayDefault(node.nodeName);
+                }
+                arr.push(obj);
+            }
+            showHidden(node.parentNode,arr);
         }
+    }
+
+    /**
+     * 设置宽高
+     * @param node
+     * @param name
+     * @param val 传入的值为offsetWidth/offsetHeight
+     * @param extra 0->width/height; 1->innerWidth/innerHeight; 2->outerWidth/outerHeight
+     */
+    function correctWH(node, name, val, extra) {
+        var witch = cssPair[name],
+            getter =function (prop) {
+                return maruo.css(node,prop,true);
+            };
+        witch.forEach(function (d) {
+            if (extra < 1) {
+                val -= getter('padding' + d);
+            }
+            if (extra < 2) {
+                val -= getter('border' + d + 'Width');
+            }
+            if (extra === 3) {
+                val += getter('margin' + d);
+            }
+            //用于set宽高时对box-sizing的处理
+            if (extra === 'padding-box') {
+               val += getter('padding' + d);
+            }
+            if (extra === 'border-box') {
+                val += getter('padding' + d);
+                val += getter('border' + d + 'Width');
+            }
+        });
 
     }
+    
+    function getWH(node, name, extra) { //name首字母大写
+        var hidden = [];
+        collectHiddenAndShow(node, hidden);
+        var val = correctWH(node, name, node['offset'+name], extra);
+        //还原测量样式
+        for (var i = 0, obj; obj = hidden[i++]; ) {
+            node = obj.node;
+            for (name in obj) {
+                if (typeof obj[name] === 'string') {
+                    node.style[name] = obj[name];
+                }
+            }
+        }
+        return val;
+    }
+
+    //=========================　处理　width, height, innerWidth, innerHeight, outerWidth, outerHeight　========
+    'Height,Width'.replace(rword, function (name) {
+        var lower = name.toLowerCase(),
+            clientProp = 'client' + name,
+            offsetProp = 'offset' + name,
+            scrollProp = 'scroll' + name;
+        maruo.cssHooks[lower + ':get'] = function (node) {
+            return getWH(node, name, 0) + 'px';
+        };
+        maruo.cssHooks[lower + ':set'] = function (node, nick, value) {
+            var boxSizing = maruo.css(node,'box-sizing');
+            node.style[nick] = box === 'content-box' ? value : correctWH(node, name, parseFloat(value), boxSizing) + 'px';
+        };
+        'no_0,inner_1,outer_2'.replace(rmapper,function (a, b, num) {
+            var method = b === 'no' ? lower : b + name;
+            maruo[method] = function (node,value) {
+                num = b === 'outer' && value === true ? 3 : Number(num);
+                value - typeof value === 'boolean' ? void 0 : value;
+                if (value === void 0) {
+                    if (maruo.type(node,'Window')) {
+                        //取得窗口尺寸,IE9后可以用node.innerWidth /innerHeight代替
+                        return node['inner' + name] || node.document.documentElement[clientProp];
+                    }
+                    if (node.nodeType === 9) {
+                        var doc = node.documentElement;
+                       return Math.max(node.body[scrollProp], doc[scrollProp], node.body[offsetProp], doc[offsetProp], doc[clientProp]);
+                    }
+                    return getWH(node, name, num);
+                } else {
+                    maruo.css(node,lower,value);
+                }
+            }
+        })
+
+    });
+
+    var shadowRoot, shadowDoc, shadowWin, reuse;
+    function applyShadowDOM(callback) {
+        if (!shadowRoot) {
+            shadowRoot = doc.createElement('iframe');
+            shadowRoot.style.cssText = 'width:0;height:0;border:0 none;';
+        }
+        root.appendChild(shadowRoot);
+        if(!reuse) { //firefox, safari, chrome不能重用shadowDoc,shadowWin
+            shadowWin = shadowRoot.contentWindow;
+            shadowDoc = shadowWin.document;
+            shadowDoc.write("<!doctype html><html><body>");
+            shadowDoc.close();
+            reuse = window.VBArray || window.opera; //opera9-12, ie6-10有效
+        }
+        callback(shadowWin, shadowDoc, shadowDoc.body);
+        setTimeout(function () {
+            root.removeChild(shadowRoot);
+        },1000);
+    }
+    
+    
+    
+    var _scrollBarWidth = 0; // 记录scrollBar的宽度
+    var _displayCache = maruo.oneObject('a,abbr,b,span,strong,em,font,i,kbd', 'inline');
+    var _blocks = maruo.oneObject('div,h1,h2,h3,h4,h5,h6,section,p', 'block');
+    maruo.mix(_displayCache,_blocks);
+
+    maruo.mix(maruo, {
+        parseDisplayDefault: function (nodeName) {
+            nodeName = nodeName.toLowerCase();
+            if (!_displayCache[nodeName]) {
+                applyShadowDOM(function (win, doc, body, val) {
+                    var node = doc.createElement(nodeName);
+                    body.appendChild(node);
+                    if (win.getComputedStyle) {
+                        val = win.getComputedStyle(node,null).display;
+                    } else {
+                        val = node.currentStyle.display;
+                    }
+                    _displayCache[nodeName] = val;
+                })
+            }
+            return _displayCache[nodeName];
+        },
+        css: function (node, name, value) {
+            if (node instanceof maruo) {
+                node = node[0];
+            }
+            var prop = /[_-]/.test(name) ? camlizeStyleName(name) : name,fn;
+            name = maruo.cssName(name) || prop;
+            if (value === void 0 || typeof value === 'boolean') {
+                fn = cssHooks[prop + ':get'] || cssHooks['@:get'];
+                if (name === 'background') {
+                    name = 'backgroundColor';
+                }
+                var ret = fn(name);
+                return typeof value === 'boolean' ? parseFloat(ret) || 0 : ret;
+            } else if (value === '') {
+                //清除样式
+                node.style[name] = '';
+            } else {
+                if (value === null || value !== value) {
+                    return;
+                }
+                if (isFinite(value) && !maruo.cssNumber[prop]) {
+                    value += "px"
+                }
+                fn = cssHooks[prop + ':set'] || cssHooks['@:set'];
+                fn(node, name, value);
+            }
+
+        },
+        offset: function (node, value) {
+            if (value && value.left && value.top) {
+               setOffset(node, value); 
+            }
+            var box = {
+                top: 0,
+                left: 0
+            };
+            if (!node || !node.tagName || !node.ownerDocument) {
+                return box;
+            }
+            var doc = node.ownerDocument,
+                body = doc.body,
+                root = doc.documentElement,
+                win = doc.defaultView || doc.parentWindow;
+            if(!maruo.contains(root,node)){
+                return box;
+            }
+            if(node.getBoundingClientRect){
+                box = node.getBoundingClientRect();
+            }
+            var clientTop = root.clientTop || body.clientTop,
+                clientLeft = root.clientLeft || body.clientLeft,
+                scrollTop = Math.max(win.pageYOffset || 0, root.scrollTop, body.scrollTop),
+                scrollLeft = Math.max(win.pageXOffset || 0, root.scrollLeft, body.scrollLeft);
+            return {
+                left : box.left - clientLeft + scrollLeft,
+                top: box.top - clientTop + scrollTop
+            }
+        },
+        ////如果元素被移出DOM树，或display为none，或作为HTML或BODY元素，或其position的精确值为fixed时，返回null
+        offsetParent: function (node) {
+            var el = node.offsetParent;
+            while (el && maruo.css(el, 'position') === 'static') {
+                el = el.offsetParent;
+            }
+            return el || root;
+        },
+        //取得相对于offsetParent的偏移
+        position: function (node) {
+            var offset,
+                parentOffset = {
+                    top:0,
+                    left:0
+                };
+            if (!node) {
+               return;
+            }
+            if (maruo.css(node,'postion') === 'fixed') {
+                offset = node.getBoundingClientRect()
+            } else {
+                offset = maruo.offset(node);
+                var offsetParent = maruo.offsetParent(node);
+                if (offsetParent.tagName.toLowerCase() !== 'html') {
+                   parentOffset = maruo.offset(offsetParent);
+                }
+                parentOffset.top += maruo.css(offsetParent, 'borderTopWidth', true);
+                parentOffset.left += maruo.css(offsetParent, 'borderLeftWidth', true);
+            }
+            return {
+                top: offset.top - parentOffset.top - maruo.css(node,'marginTop', true),
+                left: offset.left - parentOffset.left - maruo.css(node, 'marginLeft', true)
+            }
+        },
+        getScrollBarWidth: function (recal) {
+            if (!_scrollBarWidth || recal) {
+                var div = document.createElement('div');
+                div.style.position = 'absolute';
+                div.style.left = '-9999px';
+                div.style.width = '50px';
+                div.style.height = '50px';
+                div.style.overflow = 'scroll';
+                doc.body.appendChild(div);
+                _scrollBarWidth = div.offsetWidth - div.clientWidth;
+                doc.body.removeChild(div);
+            }
+            return _scrollBarWidth;
+        }
+    });
+
+    function setOffset(node, options) {
+        if (node && node.nodeType === 1) {
+            var position = maruo.css(node, 'position');
+            if (position === 'static') {
+                node.style.position = 'relative';
+            }
+            var offset = maruo.offset(node),
+                top = maruo.css(node,'top'),
+                left = maruo.css(node,'left'),
+                needCalPos = (position === 'absolute' || position === 'fixed') && [top, left].indexOf('auto') > -1,
+                retTop,retLeft;
+            if (needCalPos) {
+                var curPosition = maruo.position(node);
+                retLeft = curPosition.left;
+                retTop = curPosition.top;
+            } else {
+                retLeft = parseFloat(left) || 0;
+                retTop = parseFloat(top) || 0;
+            }
+            if (parseFloat(options.left)) {
+                retLeft = options.left - offset.left + retLeft;
+            }
+            if (parseFloat(options.top)) {
+                retTop = options.top - offset.top + retTop;
+            }
+            maruo.css(node,'left',retLeft);
+            maruo.css(node,'top',retTop);
+        }
+    }
+
+    
+    'scrollLeft_pageXOffset,scrollTop_pageYOffset'.replace(rmapper,function (_,method,prop) {
+        maruo[method] = function (node, val) {
+            var win = domHelper.getWindow(node),
+                top = method === 'scrollTop';
+            if (val === void 0) {
+               if (!node) {
+                   return null;
+               }
+                return win ? (prop in win) ? win[prop] : win.document.documentElement[method] : node[method];
+            }
+            if (win) {
+                win.scrollTo(!top?val:maruo.scrollLeft(node),top?val:maruo.scrollTop(node));
+            } else {
+                node[method] = val;
+            }
+        }
+    });
+    
+    
+    
 
 
     /*********************************************************************
