@@ -5,11 +5,14 @@
 /**
  * #全局变量
  * #全局方法
+ * #Cache
  * #静态方法
  * #原型方法
  * #JS底层补丁
  * #DOM Helper
  * #CSS
+ * #Attr
+ * #Support
  * #MVVM
  */
 
@@ -43,7 +46,7 @@
     var rword = /[^, ]+/g;
     var rnative = /\[native code\]/ //判定是否原生函数
 
-    var cinerator = doc.createElement("div")
+    var cinerator = doc.createElement("div");
 
     var class2type = {
         "[object HTMLDocument]": "Document",
@@ -62,6 +65,31 @@
     var maruo = function (el) {
         return new maruo.init(el);
     };
+
+    /*********************************************************************
+     *                    #Support                                       *
+     *********************************************************************/
+    var div = doc.createElement('div'),
+        TAGS = 'getElementsByTagName';
+    div.setAttribute("className","t");
+    div.innerHTML = ' <link/><a href="/nasami"  style="float:left;opacity:.25;">d</a>' + '<object><param/></object><table></table><input type="checkbox" checked/>';
+    var a = div[TAGS]('a')[0],
+        style = a.style,
+        select = doc.createElement('select'),
+        input = div[TAGS]('input')[0],
+        opt = select.appendChild(doc.createElement('option'));
+    maruo.support = {
+        // 在大多数游览器中checkbox的value默认为on，唯有chrome返回空字符串
+        checkOn: input.value === "on",
+        //IE67，无法取得用户设定的原始href值
+        attrInnateHref: a.getAttribute("href") === "/nasami",
+        //IE67，无法取得用户设定的原始style值，只能返回el.style（CSSStyleDeclaration）对象(bug)
+        attrInnateStyle: a.getAttribute("style") !== style,
+        //IE67, 对于某些固有属性需要进行映射才可以用，如class, for, char，IE8及其他标准浏览器不需要
+        attrInnateName: div.className !== "t",
+        //IE6-8,对于某些固有属性不会返回用户最初设置的值
+        attrInnateValue: input.getAttribute("checked") == ""
+    }
 
     /*********************************************************************
      *                    #全局方法                                       *
@@ -117,8 +145,82 @@
         return str.replace(rhyphenate,'$1-$2').toLowerCase();
     }
 
+    /*********************************************************************
+     *                    #Cache                                         *
+     *********************************************************************/
+    // https://github.com/rsms/js-lru
+    var Cache = new function() {// jshint ignore:line
+        function LRU(maxLength) {
+            this.size = 0
+            this.limit = maxLength
+            this.head = this.tail = void 0
+            this._keymap = {}
+        }
 
+        var p = LRU.prototype
 
+        p.put = function(key, value) {
+            var entry = {
+                key: key,
+                value: value
+            }
+            this._keymap[key] = entry
+            if (this.tail) {
+                this.tail.newer = entry
+                entry.older = this.tail
+            } else {
+                this.head = entry
+            }
+            this.tail = entry
+            if (this.size === this.limit) {
+                this.shift()
+            } else {
+                this.size++
+            }
+            return value
+        }
+
+        p.shift = function() {
+            var entry = this.head
+            if (entry) {
+                this.head = this.head.newer
+                this.head.older =
+                    entry.newer =
+                        entry.older =
+                            this._keymap[entry.key] = void 0
+                delete this._keymap[entry.key] //#1029
+            }
+        }
+        p.get = function(key) {
+            var entry = this._keymap[key]
+            if (entry === void 0)
+                return
+            if (entry === this.tail) {
+                return  entry.value
+            }
+            // HEAD--------------TAIL
+            //   <.older   .newer>
+            //  <--- add direction --
+            //   A  B  C  <D>  E
+            if (entry.newer) {
+                if (entry === this.head) {
+                    this.head = entry.newer
+                }
+                entry.newer.older = entry.older // C <-- E.
+            }
+            if (entry.older) {
+                entry.older.newer = entry.newer // C. --> E
+            }
+            entry.newer = void 0 // D --x
+            entry.older = this.tail // D. --> E
+            if (this.tail) {
+                this.tail.newer = entry // E. <-- D
+            }
+            this.tail = entry
+            return entry.value
+        }
+        return LRU
+    }
 
     /*********************************************************************
      *                    #静态方法                                       *
@@ -359,7 +461,7 @@
             if (!obj) {
                 return false;
             }
-            var len = obj.length;
+            var n = obj.length;
             if (n === (n>>>0)) { //是否为非负数
                 var type = toString.call(obj).slice(8,-1);
                 if (/(?:regexp|string|function|window|global)$/i.test(type)) {
@@ -380,45 +482,42 @@
             }
             return false;
         },
-        
-        bind:function (el, type, fn, phase) {
-            if (w3c) {
-                el.addEventListener(type, fn, !!phase);
-            } else {
-                el.attachEvent('on' + type, fn);
-            }
-        },
-        
-        unbind: function (el, type, fn, phase) {
-            if (w3c) {
-                el.removeEventListener(type,fn,phase);
-            } else {
-                el.detachEvent('on' + type, fn);
-            }
-        }
-    });
 
-    /*********************************************************************
-     *                    #原型方法                                       *
-     *********************************************************************/
-
-    maruo.mix(maruo.fn, {
-        attr: function (name, value) {
-            if (arguments.length === 2) {
-                this[0].setAttribute(name, value);
-                return this;
-            }
-            return this[0].getAttribute(name);
-        },
-        css: function (name, value) {
-            if (maruo.isPlainObject(name)) {
-                for (var i in name) {
-                    maruo.css(this, i, name[i]);
+        each: function (obj, fn) {
+            if (obj) {
+                var i = 0;
+                if (maruo.isArrayLike(obj)) {
+                    for (var n = obj.length; i < n; i++) {
+                        if(fn(i, obj[i]) === false){
+                            break;
+                        }
+                    }
+                } else {
+                    for (i in obj) {
+                        if (obj.hasOwnProperty(i) && fn(i, obj[i]) === false) {
+                            break
+                        }
+                    }
                 }
-            } else {
-                var ret = maruo.css(this, name, value);
             }
-            return ret !== void 0 ? ret : this;
+        },
+
+        Array: {
+            ensure: function (target, item) {
+                if (target.indexOf(item) === -1) {
+                    return target.push(item);
+                }
+            },
+            removeAt: function (target, index) {
+                return !!target.splice(index,1).length;
+            },
+            remove: function (target, item) {
+                var index = target.indexOf(item);
+                if (~index) {
+                   return maruo.Array.removeAt(target,index);
+                }
+                return false;
+            }
         }
     });
 
@@ -708,7 +807,7 @@
         'float' : w3c ? 'cssFloat' : 'styleFloat'
     };
     //这里的属性不需要自行添加px
-    maruo.cssNumber = $.oneObject("columnCount,fillOpacity,fontSizeAdjust,fontWeight,lineHeight,opacity,orphans,widows,zIndex,zoom,rotate");
+    maruo.cssNumber = maruo.oneObject("columnCount,fillOpacity,fontSizeAdjust,fontWeight,lineHeight,opacity,orphans,widows,zIndex,zoom,rotate");
 
     maruo.transitionend = _getTransitionPropertiesEndAndPrefix.end;
     
@@ -1147,20 +1246,255 @@
             }
         }
     });
+
+    maruo.mix(maruo.fn,{
+        attr: function (name, value) {
+            if (arguments.length === 2) {
+                this[0].setAttribute(name, value);
+                return this;
+            }
+            return this[0].getAttribute(name);
+        },
+        css: function (name, value) {
+            if (maruo.isPlainObject(value)) {
+                for (var i in name) {
+                    maruo.css(this, name, value);
+                }
+            } else {
+                var ret = maruo.css(this, name, value);
+            }
+            return ret !== void 0 ? ret : this;
+        },
+        position: function () {
+            return maruo.position(this[0])
+        },
+        offsetParent: function () {
+            var el = maruo.offset(this[0])
+            return maruo(el)
+        }
+    });
+
+    /*********************************************************************
+     *                    #Attr & Val                                    *
+     *********************************************************************/
+    var roption = /^<option(?:\s+\w+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?)*\s+value[\s=]/i
+    var valHooks = {
+        //在IE11及W3C，如果没有指定value，那么node.value默认为node.text（存在trim作），但IE9-10则是取innerHTML(没trim操作)
+        'option:get': function (node) {
+            if(node.hasAttributes()){
+                return node.hasAttributes('value') ? node.value : node.text.trim();
+            }
+            //specified并不可靠，因此通过分析outerHTML判定用户有没有显示定义value
+            return roption.test(node.outerHTML) ? node.value : node.text.trim();
+        },
+        'select:get': function (node) {
+            //显示声明多选:multiple, node.selectedIndex返回第一个
+            //当没有option时,index == -1
+            var options = node.options,
+                index = node.selectedIndex,
+                getter = valHooks['option:get'],
+                one = node.type === 'select-one' || index < 0,
+                max = one ? index + 1 : options.length,
+                values = one ? null : [],
+                i = index < 0 ? max : one ? index : 0,
+                option,val;
+
+            for (; i<max; i++) {
+                option = options[i];
+                //旧式IE在reset后不会改变selected，需要改用i === index判定
+                //我们过滤所有disabled的option元素，但在safari5下，如果设置select为disable，那么其所有孩子都disable
+                //因此当一个元素为disable，需要检测其是否显式设置了disable及其父节点的disable情况
+                if ((option.selected || i === index) && !option.disabled) {
+                    val = getter(option);
+                    if (one) {
+                        return val;
+                    }
+                    values.push(val);
+                }
+            }
+            return values;
+        },
+        'select:set': function (node, val) {
+            val = [].concat(val);
+            var getter = valHooks['option:get'],
+                optionSel, i = 0, el;
+            for (; el = node.options[i++];) {
+                if ((el.selected = val.indexOf(getter(el)) > -1)) {
+                    optionSel = true;
+                }
+            }
+            if(!optionSel){
+                node.selectedIndex = -1;
+            }
+        }
+    };
     
+    if (!maruo.support.checkOn) {
+        valHooks['checked:get'] = function (node) {
+            return node.getAttribute('value') === null ? 'on' : node.value
+        }
+    }
     
+    valHooks['checked:set'] = function (node, name, value) {
+        if (Array.isArray(value)) {
+            return node.checked == !!~value.indexOf(node.value);
+        }
+    };
     
+
+    function getValType(node) {
+        var ret = node.tagName.toLowerCase();
+        return ret === 'input' && /checkbox|radio/.test(node.type) ? 'checked' : ret;
+    }
+    maruo.mix({
+        /**
+         * 判断是否是自定义属性
+         * @param attr
+         * @param host
+         * @returns {boolean}
+         */
+        isAttribute: function (attr, host) {
+            //有些熟悉是特殊元素才有的,需要用到第二个参数
+            host = host || cinerator;
+            return host.getAttribute(attr) === null && host[attr] === void 0;
+        }
+    });
+
+    maruo.mix(maruo.fn,{
+        attr: function (name, val) {
+            if (arguments.length === 2) {
+                this[0].setAttribute(name, val);
+                return this;
+            }
+            return this[0].getAttribute(name);
+        },
+        val: function (value) {
+            var node = this[0];
+            if (node && node.nodeType === 1) {
+                var get = arguments.length === 0;
+                var access = get ? ":get" : ":set";
+                var fn = valHooks[getValType(node) + access];
+                if (fn) {
+                    var val = fn(node, value);
+                } else  if (get) {
+                    return (node.value || "").replace(/\r/g,'');
+                } else {
+                    node.value = value;
+                }
+            }
+            return get ? val : this;
+        }
+    });
+
+    /*********************************************************************
+     *                    #Event                                         *
+     *********************************************************************/
+    var rmouseEvent = /^(?:mouse|contextmenu|drag)|click/;
+    function fixEvent(event) {
+        var ret = {};
+        for (var i in event) {
+            ret[i] = event[i];
+        }
+        var target = ret.target = event.srcElement;
+        if (event.type.indexOf('key') === 0) {
+            ret.which = event.charCode != null ? event.charCode : event.keyCode;
+        } else if (rmouseEvent.test(event.type)) {
+            var _doc = target.ownerDocument || doc;
+            var box = _doc.compatMode === 'BackCompat' ? doc.body : doc.documentElement;
+            ret.pageX = event.clientX + (box.scrollLeft >> 0) - (box.clientLeft >> 0)
+            ret.pageY = event.clientY + (box.scrollTop >> 0) - (box.clientTop >> 0)
+            ret.wheelDeltaY = ret.wheelDelta
+            ret.wheelDeltaX = 0
+        }
+        ret.timeStamp = new Date() - 0
+        ret.originalEvent = event
+        ret.preventDefault = function () { //阻止默认行为
+            event.returnValue = false
+        };
+        ret.stopPropagation = function () { //阻止事件在DOM树中的传播
+            event.cancelBubble = true
+        };
+        return ret;
+    }
+    
+    var eventHooks = [];
+
+    maruo.mix(maruo, {
+        eventHooks: eventHooks,
+
+        bind:function (el, type, fn, phase) {
+            var hooks = maruo.eventHooks,
+                hook = hooks[type];
+            if (typeof hook === 'object') {
+                type = hook.type || type;
+                phase = hook.phase || !!phase;
+                fn = hook.fn ? hook.fn(el,fn) : fn;
+            }
+            var callback = w3c? fn : function (e) {
+                fn.call(el, fixEvent(e))
+            };
+            if (w3c) {
+                el.addEventListener(type, callback, phase);
+            } else {
+                el.attachEvent('on' + type, callback);
+            }
+        },
+
+        unbind: function (el, type, fn, phase) {
+            var hooks = maruo.eventHooks,
+                hook = hooks[type];
+            var callback = fn || noop;
+            if (typeof hook === 'object') {
+                type = hook.type || type;
+                phase = hook.phase || !!phase;
+            }
+            if (w3c) {
+                el.removeEventListener(type,callback,phase);
+            } else {
+                el.detachEvent('on' + type, callback);
+            }
+        }
+    });
 
 
     /*********************************************************************
      *                    #MVVM                                          *
      *********************************************************************/
 
-    maruo.vms = {};
+    var vms = maruo.vms = {};
     maruo.define = function (id,factory) {
+        var $id = id.$id || id;
+        if (!$id) {
+           log('waring: vm必须指定$id');
+        }
+        if (vms[$id]) {
+           log.('warning:' + $id + '已经存在于vms中')
+        }
+        var model;
+        if (typeof id === 'object') {
+           model = modelFactory(id);
+        } else {
+            var scope = {
+                $watch: noop
+            };
 
+            factory.call(scope,scope);
+            model = modelFactory(scope);
+        }
+        model.$id = $id;
+        return vms[$id] = model;
     };
+    
+    function modelFactory(scope) {
+        
+    }
 
+
+
+
+    /*********************************************************************
+     *                    #DOM Ready                                     *
+     *********************************************************************/
 
     
     // Register as a named AMD module
