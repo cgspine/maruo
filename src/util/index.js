@@ -2,13 +2,15 @@
  * Created by cgspine on 16/7/9.
  */
 
+import { rword } from './const'
+
 var rcamelize = /[-_]([^-_])/g;
 var rhyphenate = /([a-z\d])([A-Z]+)/g;
 var rhashcode = /\d\.\d{4}/
 
 export function oneObject(array, val) {
     if (typeof array === 'string') {
-        array = array.match(maruo.rword) || []
+        array = array.match(rword) || []
     }
     var result = {},
         i = 0, n = array.length,
@@ -46,3 +48,12 @@ export const makeHashCode = typeof performance !== 'undefined' && performance.no
 export  const noop = function () {
     
 }()
+
+export function hideProperty(host, name, value) {
+    Object.defineProperty(host, name, {
+        value: value,
+        writable: true,
+        enumerable: false,
+        configurable: true
+    })
+}

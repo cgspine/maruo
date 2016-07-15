@@ -2,17 +2,8 @@
  * Created by cgspine on 16/7/14.
  */
 
-import {
-    isFunction,
-    isPlainObject
-} from '../util/is'
-
-import {
-    warn
-} from  '../util/log'
-
 import { toJson } from  '../util/data'
-import { noop } from  './util/index'
+import { noop,hideProperty } from  '../util/index'
 
 import { 
     oneObject,
@@ -22,7 +13,9 @@ import config from '../config'
 
 var $$skipArray = config.$$skipArray
 
-function Observable(definition, options) {
+export function Observable(vm,definition, options) {
+    this.vm = vm
+    vm.__ob__ = this;
     options = options || {}
     options.$skipArray = {}
     if (definition.$skipArray) {
@@ -33,17 +26,68 @@ function Observable(definition, options) {
     options.id = options.id || hashcode
     options.hashcode = hashcode
 
-    var values = {}
-
-    this.makeAccessors(definition,options, values)
-    this.makePureModelAccessor()
-
-
+    this.makeAccessors(definition,options)
 
 }
 
-Observable.prototype.makeAccessors = function (definition,options,values) {
-    var key,val,sid
+Observable.prototype.hideProperties = function (keys, options) {
+    function hasOwnKey(key) {
+        return keys[key] === true
+    }
+    hideProperty(this.vm, 'hasOwnProperty', hasOwnKey)
+    hideProperty(this.vm, '$id', options.id)
+    hideProperty(this.vm, '$hashcode', options.hashcode)
+    hideProperty(this.vm, '$track', Object.keys(keys).sort().join(';;'))
+    hideProperty(this.vm, '$element', null)
+    hideProperty(this.vm, '$run', this.run.bind(this.vm))
+    hideProperty(this.vm, '$wait', this.wait.bind(this.vm))
+    hideProperty(this.vm, '$render', 0)
+    hideProperty(this.vm, '$events', {})
+
+    var self = this;
+    hideProperty(this, '$watch', function () {
+        if (arguments.length === 2) {
+            return self.watch.apply(self.vm, arguments)
+        } else {
+            throw '$watch方法参数不对'
+        }
+    })
+    hideProperty(this.vm, '$fire', this.emit.bind(this.vm))
+
+}
+
+Observable.prototype.wait = function () {
+    this.vm.$events.$$wait$$ = true
+}
+
+Observable.prototype.run = function() {
+    var host = this.vm.$events
+    delete host.$$wait$$
+    if (host.$$dirty$$) {
+        delete host.$$dirty$$
+        avalon.rerenderStart = new Date
+        var id = this.$id
+        var dotIndex = id.indexOf('.')
+        if (dotIndex > 0) {
+            avalon.batch(id.slice(0, dotIndex))
+        } else {
+            avalon.batch(id)
+        }
+    }
+}
+
+Observable.prototype.watch = function (expr, callback) {
+
+}
+
+Observable.prototype.emit = function (expr, a, b) {
+    var list = self.$events[expr]
+}
+
+Observable.prototype.makeAccessors = function (definition,options) {
+    this.makePureModelAccessor()
+
+    var key,val,sid, values = {}
     options.$skipArray = options.$skipArray || {}
     for (key in definition) {
         if(definition.hasOwnProperty(key)){
@@ -60,7 +104,7 @@ Observable.prototype.makeAccessors = function (definition,options,values) {
     for (key in values) {
         if(values.hasOwnProperty(key)){
             //对普通监控属性或访问器属性进行赋值
-            this[key] = values[key]
+            this.vm[key] = values[key]
             if (key in options.$skipArray) {
                 delete values[key]
             } else {
@@ -68,10 +112,12 @@ Observable.prototype.makeAccessors = function (definition,options,values) {
             }
         }
     }
+
+    this.hideProperties(values,options)
 }
 
 Observable.prototype.makePureModelAccessor = function () {
-    Object.defineProperty(this, "$model", {
+    Object.defineProperty(this.vm, "$model", {
         get:function () {
             return toJson(this)
         },
@@ -84,7 +130,7 @@ Observable.prototype.makePureModelAccessor = function () {
 
 Observable.prototype.makeAccessor = function (sid,key) {
     var val = NaN
-   Observable.defineProperty(self,key,{
+   Object.defineProperty(this.vm,key,{
        get: function () {
            return val
        },

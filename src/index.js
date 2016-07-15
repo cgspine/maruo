@@ -14,6 +14,8 @@ maruo.init = function (el) {
 
 maruo.fn = maruo.prototype = maruo.init.prototype
 
+maruo.vms = {}
+
 mixinCore(maruo)
 mixinViewModel(maruo)
 

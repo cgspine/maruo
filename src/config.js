@@ -6,5 +6,5 @@ import { oneObject } from './util'
 export default {
     debug: true,
     
-    $$skipArray: oneObject('$id,$render,$track,$element,$watch,$fire,$events,$model,$skipArray,$accessors,$hashcode,$run,$wait,__proxy__,__data__,__const__')
+    $$skipArray: oneObject('$id,$render,$track,$parent,$element,$watch,$fire,$events,$model,$skipArray,$accessors,$hashcode,$run,$wait,__proxy__,__data__,__const__,__ob__')
 }
