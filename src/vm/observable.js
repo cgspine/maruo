@@ -11,126 +11,102 @@ import {
 } from '../util/index'
 import config from '../config'
 
-var $$skipArray = config.$$skipArray
-
-export function Observable(vm,definition, options) {
-    this.vm = vm
-    vm.__ob__ = this;
+export function Observable(definition, options) {
+    this.__data__ = Object.create(null);
     options = options || {}
-    options.$skipArray = {}
+    
+    this.$skipArray = {}
     if (definition.$skipArray) {
-        options.$skipArray =  oneObject(definition.$skipArray)
+        this.$skipArray =  oneObject(definition.$skipArray)
         delete definition.$skipArray
     }
-    var hashcode = makeHashCode('$')
-    options.id = options.id || hashcode
-    options.hashcode = hashcode
-
-    this.makeAccessors(definition,options)
-
-}
-
-Observable.prototype.hideProperties = function (keys, options) {
-    function hasOwnKey(key) {
-        return keys[key] === true
-    }
-    hideProperty(this.vm, 'hasOwnProperty', hasOwnKey)
-    hideProperty(this.vm, '$id', options.id)
-    hideProperty(this.vm, '$hashcode', options.hashcode)
-    hideProperty(this.vm, '$track', Object.keys(keys).sort().join(';;'))
-    hideProperty(this.vm, '$element', null)
-    hideProperty(this.vm, '$run', this.run.bind(this.vm))
-    hideProperty(this.vm, '$wait', this.wait.bind(this.vm))
-    hideProperty(this.vm, '$render', 0)
-    hideProperty(this.vm, '$events', {})
-
-    var self = this;
-    hideProperty(this, '$watch', function () {
-        if (arguments.length === 2) {
-            return self.watch.apply(self.vm, arguments)
-        } else {
-            throw '$watch方法参数不对'
-        }
-    })
-    hideProperty(this.vm, '$fire', this.emit.bind(this.vm))
-
+    this.$events = {}
+   
+    this.observe(definition,options)
 }
 
 Observable.prototype.wait = function () {
-    this.vm.$events.$$wait$$ = true
+    this.$events.$$wait$$ = true
 }
 
-Observable.prototype.run = function() {
-    var host = this.vm.$events
-    delete host.$$wait$$
-    if (host.$$dirty$$) {
-        delete host.$$dirty$$
-        avalon.rerenderStart = new Date
-        var id = this.$id
-        var dotIndex = id.indexOf('.')
-        if (dotIndex > 0) {
-            avalon.batch(id.slice(0, dotIndex))
-        } else {
-            avalon.batch(id)
-        }
+
+Observable.prototype.$watch = function (expr, callback) {
+    if (arguments.length === 2) {
+        
+    } else {
+        throw '$watch方法参数不对'
     }
 }
 
-Observable.prototype.watch = function (expr, callback) {
-
+Observable.prototype.$emit = function (expr, a, b) {
+    var list = this.$events[expr]
 }
 
-Observable.prototype.emit = function (expr, a, b) {
-    var list = self.$events[expr]
-}
-
-Observable.prototype.makeAccessors = function (definition,options) {
-    this.makePureModelAccessor()
-
+Observable.prototype.observe = function (definition,options) {
     var key,val,sid, values = {}
-    options.$skipArray = options.$skipArray || {}
     for (key in definition) {
         if(definition.hasOwnProperty(key)){
-            if ($$skipArray[key]) {
-                continue
-            }
             val = values[key] = definition[key]
-            if (!this.isSkip(key, val, options.$skipArray)) {
+            if (!this.isPropSkip(key, val)) {
                 sid = options.id + '.' + key
-                this.makeAccessor(sid,key)
+                this.makePropAccessor(sid,key)
+            } else if(typeof val === 'function') {
+                this.makeFuncAccessor(key,val)
             }
         }
     }
+    // 赋值与代理
     for (key in values) {
         if(values.hasOwnProperty(key)){
             //对普通监控属性或访问器属性进行赋值
-            this.vm[key] = values[key]
-            if (key in options.$skipArray) {
+            this.__data__[key] = values[key]
+            this.proxy(key)
+            if (key in this.$skipArray) {
                 delete values[key]
             } else {
                 values[key] = true
             }
         }
     }
-
-    this.hideProperties(values,options)
-}
-
-Observable.prototype.makePureModelAccessor = function () {
-    Object.defineProperty(this.vm, "$model", {
-        get:function () {
-            return toJson(this)
-        },
-        set: noop,
-        enumerable: false,
-        configurable: true
+    // 使得$id不可被枚举
+    hideProperty(this.__data__, '$id', options.id)
+    
+    // 改写hasOwnProperty
+    hideProperty(this.__data__, 'hasOwnProperty', function (key) {
+        return values[key] === true
     })
 }
 
+/**
+ * 代理__data__
+ * @param key
+ */
+Observable.prototype.proxy = function (key){
+    var self = this
+    Object.defineProperty(this, key, {
+        get: function () {
+            return self.__data__[key]
+        },
+        set: function (val) {
+            self.__data__[key] = val
+        },
+        enumerable:false,
+        configurable:true
+    })
+}
 
-Observable.prototype.makeAccessor = function (sid,key) {
+/**
+ * 转换为纯对象
+ * @returns {*}
+ */
+Observable.prototype.$model = function () {
+    return toJson(this.__data__)
+}
+
+
+Observable.prototype.makePropAccessor = function (sid,key) {
     var val = NaN
-   Object.defineProperty(this.vm,key,{
+   Object.defineProperty(this.__data__,key,{
        get: function () {
            return val
        },
@@ -145,10 +121,22 @@ Observable.prototype.makeAccessor = function (sid,key) {
    })
 }
 
-Observable.prototype.isSkip = function (key, value, skipArray) {
+Observable.prototype.makeFuncAccessor = function (key, val) {
+    var self = this
+    Object.defineProperty(self,key,{
+        value:function () {
+            return val.apply(self,arguments)
+        },
+        writable: true,
+        enumerable: true,
+        configurable: true
+    })
+}
+
+Observable.prototype.isPropSkip = function (key, value) {
     // 判定此属性能否转换访问器
     return key.charAt(0) === '$' ||
-        skipArray[key] ||
+        this.$skipArray[key] ||
         (typeof value === 'function') ||
         (value && value.nodeName && value.nodeType > 0)
 }

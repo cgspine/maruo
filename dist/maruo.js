@@ -169,9 +169,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (maruo.vms[$id]) {
 	            throw Error('error: [' + $id + '] had been defined!');
 	        }
-	        var vm = {};
-	        new _observable.Observable(vm, definition, {
-	            id: $id
+	        var vm = new _observable.Observable(definition, {
+	            id: $id,
+	            master: true
 	        });
 	        return maruo.vms[$id] = vm;
 	    };
@@ -204,124 +204,101 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _config2 = _interopRequireDefault(_config);
 	
-	var $$skipArray = _config2['default'].$$skipArray;
-	
-	function Observable(vm, definition, options) {
-	    this.vm = vm;
-	    vm.__ob__ = this;
+	function Observable(definition, options) {
+	    this.__data__ = Object.create(null);
 	    options = options || {};
-	    options.$skipArray = {};
+	
+	    this.$skipArray = {};
 	    if (definition.$skipArray) {
-	        options.$skipArray = _utilIndex.oneObject(definition.$skipArray);
+	        this.$skipArray = _utilIndex.oneObject(definition.$skipArray);
 	        delete definition.$skipArray;
 	    }
-	    var hashcode = _utilIndex.makeHashCode('$');
-	    options.id = options.id || hashcode;
-	    options.hashcode = hashcode;
+	    this.$events = {};
 	
-	    this.makeAccessors(definition, options);
+	    this.observe(definition, options);
 	}
 	
-	Observable.prototype.hideProperties = function (keys, options) {
-	    function hasOwnKey(key) {
-	        return keys[key] === true;
-	    }
-	    _utilIndex.hideProperty(this.vm, 'hasOwnProperty', hasOwnKey);
-	    _utilIndex.hideProperty(this.vm, '$id', options.id);
-	    _utilIndex.hideProperty(this.vm, '$hashcode', options.hashcode);
-	    _utilIndex.hideProperty(this.vm, '$track', Object.keys(keys).sort().join(';;'));
-	    _utilIndex.hideProperty(this.vm, '$element', null);
-	    _utilIndex.hideProperty(this.vm, '$run', this.run.bind(this.vm));
-	    _utilIndex.hideProperty(this.vm, '$wait', this.wait.bind(this.vm));
-	    _utilIndex.hideProperty(this.vm, '$render', 0);
-	    _utilIndex.hideProperty(this.vm, '$events', {});
-	
-	    var self = this;
-	    _utilIndex.hideProperty(this, '$watch', function () {
-	        if (arguments.length === 2) {
-	            return self.watch.apply(self.vm, arguments);
-	        } else {
-	            throw '$watch方法参数不对';
-	        }
-	    });
-	    _utilIndex.hideProperty(this.vm, '$fire', this.emit.bind(this.vm));
-	};
-	
 	Observable.prototype.wait = function () {
-	    this.vm.$events.$$wait$$ = true;
+	    this.$events.$$wait$$ = true;
 	};
 	
-	Observable.prototype.run = function () {
-	    var host = this.vm.$events;
-	    delete host.$$wait$$;
-	    if (host.$$dirty$$) {
-	        delete host.$$dirty$$;
-	        avalon.rerenderStart = new Date();
-	        var id = this.$id;
-	        var dotIndex = id.indexOf('.');
-	        if (dotIndex > 0) {
-	            avalon.batch(id.slice(0, dotIndex));
-	        } else {
-	            avalon.batch(id);
-	        }
+	Observable.prototype.$watch = function (expr, callback) {
+	    if (arguments.length === 2) {} else {
+	        throw '$watch方法参数不对';
 	    }
 	};
 	
-	Observable.prototype.watch = function (expr, callback) {};
-	
-	Observable.prototype.emit = function (expr, a, b) {
-	    var list = self.$events[expr];
+	Observable.prototype.$emit = function (expr, a, b) {
+	    var list = this.$events[expr];
 	};
 	
-	Observable.prototype.makeAccessors = function (definition, options) {
-	    this.makePureModelAccessor();
-	
+	Observable.prototype.observe = function (definition, options) {
 	    var key,
 	        val,
 	        sid,
 	        values = {};
-	    options.$skipArray = options.$skipArray || {};
 	    for (key in definition) {
 	        if (definition.hasOwnProperty(key)) {
-	            if ($$skipArray[key]) {
-	                continue;
-	            }
 	            val = values[key] = definition[key];
-	            if (!this.isSkip(key, val, options.$skipArray)) {
+	            if (!this.isPropSkip(key, val)) {
 	                sid = options.id + '.' + key;
-	                this.makeAccessor(sid, key);
+	                this.makePropAccessor(sid, key);
+	            } else if (typeof val === 'function') {
+	                this.makeFuncAccessor(key, val);
 	            }
 	        }
 	    }
+	    // 赋值与代理
 	    for (key in values) {
 	        if (values.hasOwnProperty(key)) {
 	            //对普通监控属性或访问器属性进行赋值
-	            this.vm[key] = values[key];
-	            if (key in options.$skipArray) {
+	            this.__data__[key] = values[key];
+	            this.proxy(key);
+	            if (key in this.$skipArray) {
 	                delete values[key];
 	            } else {
 	                values[key] = true;
 	            }
 	        }
 	    }
+	    // 使得$id不可被枚举
+	    _utilIndex.hideProperty(this.__data__, '$id', options.id);
 	
-	    this.hideProperties(values, options);
+	    // 改写hasOwnProperty
+	    _utilIndex.hideProperty(this.__data__, 'hasOwnProperty', function (key) {
+	        return values[key] === true;
+	    });
 	};
 	
-	Observable.prototype.makePureModelAccessor = function () {
-	    Object.defineProperty(this.vm, "$model", {
+	/**
+	 * 代理__data__
+	 * @param key
+	 */
+	Observable.prototype.proxy = function (key) {
+	    var self = this;
+	    Object.defineProperty(this, key, {
 	        get: function get() {
-	            return _utilData.toJson(this);
+	            return self.__data__[key];
 	        },
-	        set: _utilIndex.noop,
+	        set: function set(val) {
+	            self.__data__[key] = val;
+	        },
 	        enumerable: false,
 	        configurable: true
 	    });
 	};
 	
-	Observable.prototype.makeAccessor = function (sid, key) {
+	/**
+	 * 转换为纯对象
+	 * @returns {*}
+	 */
+	Observable.prototype.$model = function () {
+	    return _utilData.toJson(this.__data__);
+	};
+	
+	Observable.prototype.makePropAccessor = function (sid, key) {
 	    var val = NaN;
-	    Object.defineProperty(this.vm, key, {
+	    Object.defineProperty(this.__data__, key, {
 	        get: function get() {
 	            return val;
 	        },
@@ -336,9 +313,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	    });
 	};
 	
-	Observable.prototype.isSkip = function (key, value, skipArray) {
+	Observable.prototype.makeFuncAccessor = function (key, val) {
+	    var self = this;
+	    Object.defineProperty(self, key, {
+	        value: function value() {
+	            return val.apply(self, arguments);
+	        },
+	        writable: true,
+	        enumerable: true,
+	        configurable: true
+	    });
+	};
+	
+	Observable.prototype.isPropSkip = function (key, value) {
 	    // 判定此属性能否转换访问器
-	    return key.charAt(0) === '$' || skipArray[key] || typeof value === 'function' || value && value.nodeName && value.nodeType > 0;
+	    return key.charAt(0) === '$' || this.$skipArray[key] || typeof value === 'function' || value && value.nodeName && value.nodeType > 0;
 	};
 
 /***/ },

@@ -13,9 +13,9 @@ export default function mixinViewModel(maruo){
         if (maruo.vms[$id]) {
             throw Error('error: [' + $id + '] had been defined!')
         }
-        var vm = {}
-        new Observable(vm,definition, {
-            id:$id
+        var vm = new Observable(definition, {
+            id:$id,
+            master: true
         })
         return maruo.vms[$id] = vm
     }
