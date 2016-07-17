@@ -1,8 +1,14 @@
 /**
  * Created by cgspine on 16/7/9.
  */
+
+require('./lang')
+
 import mixinCore from './core/index'
 import mixinViewModel from './vm/index'
+
+
+
 
 function maruo(el) {
     return new maruo.init(el)

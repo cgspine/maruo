@@ -6,5 +6,19 @@
 </head>
 <body>
     <script src="dist/maruo.js"></script>
+    <script>
+        var vm = maruo.define({
+            $id: "watch",
+            "prop": "一个prop"
+        })
+
+        vm.$watch("prop", function (oldVal, newVal) {
+            console.log("监听到prop变化: oldVal = " + oldVal + " ; newVal = " + newVal )
+        })
+
+        setTimeout(function () {
+            vm.prop = "改变后的值"
+        },3000)
+    </script>
 </body>
 </html>

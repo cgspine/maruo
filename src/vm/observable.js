@@ -14,7 +14,7 @@ import config from '../config'
 export function Observable(definition, options) {
     this.__data__ = Object.create(null);
     options = options || {}
-    
+    this.isMaster = options.master
     this.$skipArray = {}
     if (definition.$skipArray) {
         this.$skipArray =  oneObject(definition.$skipArray)
@@ -32,14 +32,20 @@ Observable.prototype.wait = function () {
 
 Observable.prototype.$watch = function (expr, callback) {
     if (arguments.length === 2) {
-        
+        (this.$events[expr] || (this.$events[expr] = [])).ensure(callback)
     } else {
         throw '$watch方法参数不对'
     }
 }
 
-Observable.prototype.$emit = function (expr, a, b) {
+Observable.prototype.$emit = function (expr, oldVal, newVal) {
+    var self = this
     var list = this.$events[expr]
+    if(list){
+        list.forEach(function (callback) {
+            callback.call(self,oldVal, newVal)
+        })
+    }
 }
 
 Observable.prototype.observe = function (definition,options) {
@@ -103,9 +109,14 @@ Observable.prototype.$model = function () {
     return toJson(this.__data__)
 }
 
-
+/**
+ * 属性accessor构造
+ * @param sid
+ * @param key
+ */
 Observable.prototype.makePropAccessor = function (sid,key) {
     var val = NaN
+    var self = this
    Object.defineProperty(this.__data__,key,{
        get: function () {
            return val
@@ -114,6 +125,7 @@ Observable.prototype.makePropAccessor = function (sid,key) {
            if (val === newValue) {
                return
            }
+           self.$emit(key, val, newValue)
            val = newValue
        },
        enumerable: true,
