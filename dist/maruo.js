@@ -196,19 +196,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.__esModule = true;
 	exports.Observable = Observable;
 	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
 	var _utilData = __webpack_require__(5);
 	
 	var _utilIndex = __webpack_require__(7);
 	
-	var _config = __webpack_require__(8);
+	var _array = __webpack_require__(12);
 	
-	var _config2 = _interopRequireDefault(_config);
+	var arrayKeys = Object.getOwnPropertyNames(_array.arrayMethod);
 	
 	function Observable(definition, options) {
 	    options = options || {};
-	    options.spath = options.spath || '';
+	    this.spath = options.spath || '';
 	    this.root = options.root || this;
 	    this.$events = {};
 	    if (Array.isArray(definition)) {
@@ -258,7 +256,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            val = values[key] = definition[key];
 	            if (!this.isPropSkip(key, val)) {
 	                sid = options.id + '.' + key;
-	                spath = options.spath.length > 0 ? options.spath + '.' + key : key;
+	                spath = this.spath.length > 0 ? this.spath + '.' + key : key;
 	                this.makePropAccessor(sid, spath, key);
 	            } else if (typeof val === 'function') {
 	                this.makeFuncAccessor(key, val);
@@ -287,7 +285,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	    });
 	};
 	
-	Observable.prototype.observeArray = function (definition, option) {};
+	Observable.prototype.observeArray = function (definition, option) {
+	    var spath = option.spath || '';
+	    this.makeLengthAccessor(spath.length ? spath + '.length' : 'length');
+	    // 劫持数组的方法
+	    for (var i = 0; i < arrayKeys.length; i++) {
+	        var key = arrayKeys[i];
+	        defArrayMehtod(this, key, _array.arrayMethod[key]);
+	    }
+	
+	    this.makeArrayAccessor(definition);
+	};
+	
+	function defArrayMehtod(ob, key, _value) {
+	    Object.defineProperty(this, key, {
+	        value: function value() {
+	            _value.apply(ob, arguments);
+	        }
+	    });
+	}
 	
 	/**
 	 * 代理__data__
@@ -347,6 +363,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	    });
 	};
 	
+	/**
+	 *
+	 */
+	Observable.prototype.makeLengthAccessor = function (spath) {
+	    var val = 0;
+	    var root = this.root;
+	    Observable.define(this.__data__, 'length', {
+	        get: function get() {
+	            return val;
+	        },
+	        set: function set(newValue) {
+	            if (val === newValue) {
+	                return;
+	            }
+	            root.$emit(spath, val, newValue);
+	            val = newValue;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	};
+	
+	/**
+	 * 函数accessor构造
+	 * @param key
+	 * @param val
+	 */
 	Observable.prototype.makeFuncAccessor = function (key, val) {
 	    var self = this;
 	    Object.defineProperty(self, key, {
@@ -358,6 +401,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        configurable: true
 	    });
 	};
+	
+	Observable.prototype.makeArrayAccessor = function (array) {};
 	
 	Observable.prototype.isPropSkip = function (key, value) {
 	    // 判定此属性能否转换访问器
@@ -605,6 +650,57 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.push(el);
 	    }
 	};
+
+/***/ },
+/* 12 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/19.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	var _utilConst = __webpack_require__(2);
+	
+	var arrayProto = Array.prototype;
+	
+	var arrayMethods = Object.create(arrayProto);
+	
+	exports.arrayMethods = arrayMethods;
+	'push,pop,shift,unshift,splice,sort,reverse'.replace(_utilConst.rword, function (method) {
+	    var origin = arrayProto[method];
+	    Object.defineProperty(arrayMethods, method, {
+	        value: function value() {
+	            var i = arguments.length;
+	            var args = new Array(i);
+	            while (i--) {
+	                args[i] = arguments[i];
+	            }
+	            var data = this.__data__;
+	            var root = this.root;
+	            var result = origin.apply(data, args);
+	            var inserted;
+	            switch (method) {
+	                case 'push':
+	                    inserted = args;
+	                case 'unshift':
+	                    inserted = args;
+	                case 'splice':
+	                    inserted = args.slice(2);
+	            }
+	            if (inserted) {
+	                this.observeArray(inserted);
+	            }
+	            root.$emit(this.spath);
+	            return result;
+	        },
+	        writable: true,
+	        enumerable: false,
+	        configurable: false
+	    });
+	});
 
 /***/ }
 /******/ ])

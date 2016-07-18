@@ -4,20 +4,18 @@
 
 import { toJson } from  '../util/data'
 import { noop,hideProperty } from  '../util/index'
+import { arrayMethod } from  './array'
+import { oneObject } from '../util/index'
 
-import { 
-    oneObject,
-    makeHashCode
-} from '../util/index'
-import config from '../config'
+const arrayKeys = Object.getOwnPropertyNames(arrayMethod)
 
 export function Observable(definition, options) {
     options = options || {}
-    options.spath = options.spath || ''
+    this.spath = options.spath || ''
     this.root = options.root || this
     this.$events = {}
     if (Array.isArray(definition)) {
-        this.__data__ = []
+        this.__data__ = [];
         this.observeArray(definition, options)
     } else {
         this.__data__ = Object.create(null);
@@ -61,7 +59,7 @@ Observable.prototype.observeObject = function (definition,options) {
             val = values[key] = definition[key]
             if (!this.isPropSkip(key, val)) {
                 sid = options.id + '.' + key
-                spath = options.spath.length>0 ? options.spath + '.' + key : key
+                spath = this.spath.length>0 ? this.spath + '.' + key : key
                 this.makePropAccessor(sid, spath, key)
             } else if(typeof val === 'function') {
                 this.makeFuncAccessor(key,val)
@@ -91,7 +89,24 @@ Observable.prototype.observeObject = function (definition,options) {
 }
 
 Observable.prototype.observeArray = function (definition, option) {
+    var spath = option.spath || ''
+    this.makeLengthAccessor(spath.length ? spath + '.length':'length')
+    // 劫持数组的方法
+    for(var i=0; i<arrayKeys.length; i++){
+        var key = arrayKeys[i]
+        defArrayMehtod(this,key, arrayMethod[key])
+    }
     
+    this.makeArrayAccessor(definition)
+}
+
+
+function defArrayMehtod(ob, key, value) {
+    Object.defineProperty(this, key, {
+        value: function () {
+            value.apply(ob, arguments)
+        }
+    })
 }
 
 /**
@@ -152,6 +167,33 @@ Observable.prototype.makePropAccessor = function (sid,spath,key) {
    })
 }
 
+/**
+ *
+ */
+Observable.prototype.makeLengthAccessor = function (spath) {
+    var val = 0
+    var root = this.root
+    Observable.define(this.__data__, 'length', {
+        get: function () {
+            return val
+        },
+        set: function (newValue) {
+            if (val === newValue) {
+                return
+            }
+            root.$emit(spath, val, newValue)
+            val = newValue
+        },
+        enumerable: true,
+        configurable: true
+    })
+}
+
+/**
+ * 函数accessor构造
+ * @param key
+ * @param val
+ */
 Observable.prototype.makeFuncAccessor = function (key, val) {
     var self = this
     Object.defineProperty(self,key,{
@@ -162,6 +204,10 @@ Observable.prototype.makeFuncAccessor = function (key, val) {
         enumerable: true,
         configurable: true
     })
+}
+
+Observable.prototype.makeArrayAccessor = function (array) {
+    
 }
 
 Observable.prototype.isPropSkip = function (key, value) {
