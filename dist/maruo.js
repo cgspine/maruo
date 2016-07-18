@@ -202,7 +202,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _array = __webpack_require__(12);
 	
-	var arrayKeys = Object.getOwnPropertyNames(_array.arrayMethod);
+	var arrayKeys = Object.getOwnPropertyNames(_array.arrayMethods);
 	
 	function Observable(definition, options) {
 	    options = options || {};
@@ -291,7 +291,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // 劫持数组的方法
 	    for (var i = 0; i < arrayKeys.length; i++) {
 	        var key = arrayKeys[i];
-	        defArrayMehtod(this, key, _array.arrayMethod[key]);
+	        defArrayMehtod(this, key, arrayMethod[key]);
 	    }
 	
 	    this.makeArrayAccessor(definition);

@@ -4,10 +4,10 @@
 
 import { toJson } from  '../util/data'
 import { noop,hideProperty } from  '../util/index'
-import { arrayMethod } from  './array'
+import { arrayMethods } from  './array'
 import { oneObject } from '../util/index'
 
-const arrayKeys = Object.getOwnPropertyNames(arrayMethod)
+const arrayKeys = Object.getOwnPropertyNames(arrayMethods)
 
 export function Observable(definition, options) {
     options = options || {}
