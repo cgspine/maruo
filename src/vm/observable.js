@@ -12,50 +12,57 @@ import {
 import config from '../config'
 
 export function Observable(definition, options) {
-    this.__data__ = Object.create(null);
     options = options || {}
-    this.isMaster = options.master
-    this.$skipArray = {}
-    if (definition.$skipArray) {
-        this.$skipArray =  oneObject(definition.$skipArray)
-        delete definition.$skipArray
-    }
+    options.spath = options.spath || ''
+    this.root = options.root || this
     this.$events = {}
-   
-    this.observe(definition,options)
+    if (Array.isArray(definition)) {
+        this.__data__ = []
+        this.observeArray(definition, options)
+    } else {
+        this.__data__ = Object.create(null);
+        this.$skipArray = {}
+        if (definition.$skipArray) {
+            this.$skipArray =  oneObject(definition.$skipArray)
+            delete definition.$skipArray
+        }
+        this.observeObject(definition,options)
+    }
+    
 }
 
 Observable.prototype.wait = function () {
-    this.$events.$$wait$$ = true
+    this.root.$events.$$wait$$ = true
 }
 
 
 Observable.prototype.$watch = function (expr, callback) {
     if (arguments.length === 2) {
-        (this.$events[expr] || (this.$events[expr] = [])).ensure(callback)
+        (this.root.$events[expr] || (this.root.$events[expr] = [])).ensure(callback)
     } else {
         throw '$watch方法参数不对'
     }
 }
 
 Observable.prototype.$emit = function (expr, oldVal, newVal) {
-    var self = this
-    var list = this.$events[expr]
+    var root = this.root
+    var list = root.$events[expr]
     if(list){
         list.forEach(function (callback) {
-            callback.call(self,oldVal, newVal)
+            callback.call(root,oldVal, newVal)
         })
     }
 }
 
-Observable.prototype.observe = function (definition,options) {
-    var key,val,sid, values = {}
+Observable.prototype.observeObject = function (definition,options) {
+    var key,val,sid, spath, values = {}
     for (key in definition) {
         if(definition.hasOwnProperty(key)){
             val = values[key] = definition[key]
             if (!this.isPropSkip(key, val)) {
                 sid = options.id + '.' + key
-                this.makePropAccessor(sid,key)
+                spath = options.spath.length>0 ? options.spath + '.' + key : key
+                this.makePropAccessor(sid, spath, key)
             } else if(typeof val === 'function') {
                 this.makeFuncAccessor(key,val)
             }
@@ -81,6 +88,10 @@ Observable.prototype.observe = function (definition,options) {
     hideProperty(this.__data__, 'hasOwnProperty', function (key) {
         return values[key] === true
     })
+}
+
+Observable.prototype.observeArray = function (definition, option) {
+    
 }
 
 /**
@@ -114,9 +125,9 @@ Observable.prototype.$model = function () {
  * @param sid
  * @param key
  */
-Observable.prototype.makePropAccessor = function (sid,key) {
+Observable.prototype.makePropAccessor = function (sid,spath,key) {
     var val = NaN
-    var self = this
+    var root = this.root
    Object.defineProperty(this.__data__,key,{
        get: function () {
            return val
@@ -125,7 +136,15 @@ Observable.prototype.makePropAccessor = function (sid,key) {
            if (val === newValue) {
                return
            }
-           self.$emit(key, val, newValue)
+           if (newValue && typeof newValue === 'object') {
+               newValue = new Observable(newValue, {
+                   id: sid,
+                   root: root,
+                   spath: spath,
+                   oldVm: val
+               })
+           }
+           root.$emit(spath, val, newValue)
            val = newValue
        },
        enumerable: true,

@@ -9,15 +9,19 @@
     <script>
         var vm = maruo.define({
             $id: "watch",
-            "prop": "一个prop"
+            "prop": "一个prop",
+            "c": {
+                "d":"e",
+                "f": "g"
+            }
         })
 
-        vm.$watch("prop", function (oldVal, newVal) {
+        vm.$watch("c.d", function (oldVal, newVal) {
             console.log("监听到prop变化: oldVal = " + oldVal + " ; newVal = " + newVal )
         })
 
         setTimeout(function () {
-            vm.prop = "改变后的值"
+            vm.c.d = "改变后的值"
         },3000)
     </script>
 </body>
