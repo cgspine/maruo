@@ -16,9 +16,15 @@ export const arrayMethods = Object.create(arrayProto)
             while (i--) {
                 args[i] = arguments[i]
             }
-            var data = this.__data__
-            var root = this.root
-            var result = origin.apply(data,args)
+
+            var ob = this.__ob__
+            //只处理Observable对象上的调用
+            if(!ob){
+                return origin.apply(this,args)
+            }
+
+            var size = this.length
+            var result = origin.apply(this, args)
             var inserted
             switch(method){
                 case 'push':
@@ -29,9 +35,12 @@ export const arrayMethods = Object.create(arrayProto)
                     inserted = args.slice(2)
             }
             if (inserted) {
-                this.observeArray(inserted)
+                ob.observeArray(inserted)
             }
-            root.$emit(this.spath)
+            if(this.length != size) {
+                ob.root.$emit(ob.spath.length > 0 ? ob.spath + '.length' : 'length', size, this.length)
+            }
+            ob.root.$emit(this.spath)
             return result
         },
         writable:true,

@@ -72,7 +72,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _vmIndex2 = _interopRequireDefault(_vmIndex);
 	
-	__webpack_require__(10);
+	__webpack_require__(11);
 	
 	function maruo(el) {
 	    return new maruo.init(el);
@@ -200,12 +200,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _utilIndex = __webpack_require__(7);
 	
-	var _array = __webpack_require__(12);
+	var _array = __webpack_require__(8);
 	
 	var arrayKeys = Object.getOwnPropertyNames(_array.arrayMethods);
 	
+	function def(ob, key, value, enumerable) {
+	    Object.defineProperty(ob, key, {
+	        value: value,
+	        writable: true,
+	        configurable: true,
+	        enumerable: !!enumerable
+	    });
+	}
+	
 	function Observable(definition, options) {
 	    options = options || {};
+	    this.id = options.id || '';
 	    this.spath = options.spath || '';
 	    this.root = options.root || this;
 	    this.$events = {};
@@ -221,6 +231,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	        this.observeObject(definition, options);
 	    }
+	    def(this.__data__, '__ob__', this);
 	}
 	
 	Observable.prototype.wait = function () {
@@ -257,7 +268,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (!this.isPropSkip(key, val)) {
 	                sid = options.id + '.' + key;
 	                spath = this.spath.length > 0 ? this.spath + '.' + key : key;
-	                this.makePropAccessor(sid, spath, key);
+	                this.makePropAccessor(this.__data__, sid, spath, key);
 	            } else if (typeof val === 'function') {
 	                this.makeFuncAccessor(key, val);
 	            }
@@ -285,23 +296,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	    });
 	};
 	
-	Observable.prototype.observeArray = function (definition, option) {
-	    var spath = option.spath || '';
-	    this.makeLengthAccessor(spath.length ? spath + '.length' : 'length');
+	Observable.prototype.observeArray = function (definition, options) {
+	    def(this.__data__, '__array__', Object.create(null));
+	    this.proxy('length');
 	    // 劫持数组的方法
 	    for (var i = 0; i < arrayKeys.length; i++) {
 	        var key = arrayKeys[i];
-	        defArrayMehtod(this, key, arrayMethod[key]);
+	        defArrayMethods(this.__data__, key, _array.arrayMethods[key]);
 	    }
-	
-	    this.makeArrayAccessor(definition);
+	    this.makeArrayAccessor(definition, options);
 	};
 	
-	function defArrayMehtod(ob, key, _value) {
-	    Object.defineProperty(this, key, {
+	function defArrayMethods(ob, key, val) {
+	    Object.defineProperty(ob, key, {
 	        value: function value() {
-	            _value.apply(ob, arguments);
-	        }
+	            val.apply(ob, arguments);
+	        },
+	        writable: true,
+	        configurable: true,
+	        enumerable: false
 	    });
 	}
 	
@@ -336,12 +349,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @param sid
 	 * @param key
 	 */
-	Observable.prototype.makePropAccessor = function (sid, spath, key) {
+	Observable.prototype.makePropAccessor = function (ob, sid, spath, key) {
 	    var val = NaN;
 	    var root = this.root;
-	    Object.defineProperty(this.__data__, key, {
+	    Object.defineProperty(ob, key, {
 	        get: function get() {
-	            return val;
+	            return val.__data__ || val;
 	        },
 	        set: function set(newValue) {
 	            if (val === newValue) {
@@ -354,30 +367,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    spath: spath,
 	                    oldVm: val
 	                });
+	                root.$emit(spath, val, newValue.__data__);
+	            } else {
+	                root.$emit(spath, val, newValue);
 	            }
-	            root.$emit(spath, val, newValue);
-	            val = newValue;
-	        },
-	        enumerable: true,
-	        configurable: true
-	    });
-	};
-	
-	/**
-	 *
-	 */
-	Observable.prototype.makeLengthAccessor = function (spath) {
-	    var val = 0;
-	    var root = this.root;
-	    Observable.define(this.__data__, 'length', {
-	        get: function get() {
-	            return val;
-	        },
-	        set: function set(newValue) {
-	            if (val === newValue) {
-	                return;
-	            }
-	            root.$emit(spath, val, newValue);
 	            val = newValue;
 	        },
 	        enumerable: true,
@@ -402,7 +395,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	    });
 	};
 	
-	Observable.prototype.makeArrayAccessor = function (array) {};
+	Observable.prototype.makeArrayAccessor = function (array) {
+	    var i, l, arr, sid, spath, key;
+	
+	    for (i = 0, l = array.length; i < l; i++) {
+	        arr = array[i];
+	        this.__data__[i] = arr;
+	
+	        key = '' + i;
+	        sid = this.id + '.' + key;
+	        spath = this.spath + '.' + key;
+	        this.makePropAccessor(this.__data__.__array__, sid, spath, arr);
+	        this.proxy(key);
+	    }
+	};
 	
 	Observable.prototype.isPropSkip = function (key, value) {
 	    // 判定此属性能否转换访问器
@@ -564,20 +570,60 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
-	 * Created by cgspine on 16/7/9.
+	 * Created by cgspine on 16/7/19.
 	 */
 	'use strict';
 	
 	exports.__esModule = true;
 	
-	var _util = __webpack_require__(7);
+	var _utilConst = __webpack_require__(2);
 	
-	exports['default'] = {
-	    debug: true,
+	var arrayProto = Array.prototype;
 	
-	    $$skipArray: _util.oneObject('$id,$render,$track,$parent,$element,$watch,$fire,$events,$model,$skipArray,$accessors,$hashcode,$run,$wait,__proxy__,__data__,__const__,__ob__')
-	};
-	module.exports = exports['default'];
+	var arrayMethods = Object.create(arrayProto);
+	
+	exports.arrayMethods = arrayMethods;
+	'push,pop,shift,unshift,splice,sort,reverse'.replace(_utilConst.rword, function (method) {
+	    var origin = arrayProto[method];
+	    Object.defineProperty(arrayMethods, method, {
+	        value: function value() {
+	            var i = arguments.length;
+	            var args = new Array(i);
+	            while (i--) {
+	                args[i] = arguments[i];
+	            }
+	
+	            var ob = this.__ob__;
+	            //只处理Observable对象上的调用
+	            if (!ob) {
+	                return origin.apply(this, args);
+	            }
+	
+	            var size = this.length;
+	            var result = origin.apply(this, args);
+	            var inserted;
+	            switch (method) {
+	                case 'push':
+	                    inserted = args;
+	                case 'unshift':
+	                    inserted = args;
+	                case 'splice':
+	                    inserted = args.slice(2);
+	            }
+	            if (inserted) {
+	                ob.observeArray(inserted);
+	            }
+	            if (this.length != size) {
+	                ob.root.$emit(ob.spath.length > 0 ? ob.spath + '.length' : 'length', size, this.length);
+	            }
+	            ob.root.$emit(this.spath);
+	            return result;
+	        },
+	        writable: true,
+	        enumerable: false,
+	        configurable: false
+	    });
+	});
 
 /***/ },
 /* 9 */
@@ -595,7 +641,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _config = __webpack_require__(8);
+	var _config = __webpack_require__(10);
 	
 	var _config2 = _interopRequireDefault(_config);
 	
@@ -622,15 +668,35 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
+	 * Created by cgspine on 16/7/9.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	var _util = __webpack_require__(7);
+	
+	exports['default'] = {
+	    debug: true,
+	
+	    $$skipArray: _util.oneObject('$id,$render,$track,$parent,$element,$watch,$fire,$events,$model,$skipArray,$accessors,$hashcode,$run,$wait,__proxy__,__data__,__const__,__ob__')
+	};
+	module.exports = exports['default'];
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
 	 * Created by cgspine on 16/7/18.
 	 */
 	
 	'use strict';
 	
-	__webpack_require__(11);
+	__webpack_require__(12);
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports) {
 
 	/**
@@ -650,57 +716,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.push(el);
 	    }
 	};
-
-/***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Created by cgspine on 16/7/19.
-	 */
-	'use strict';
-	
-	exports.__esModule = true;
-	
-	var _utilConst = __webpack_require__(2);
-	
-	var arrayProto = Array.prototype;
-	
-	var arrayMethods = Object.create(arrayProto);
-	
-	exports.arrayMethods = arrayMethods;
-	'push,pop,shift,unshift,splice,sort,reverse'.replace(_utilConst.rword, function (method) {
-	    var origin = arrayProto[method];
-	    Object.defineProperty(arrayMethods, method, {
-	        value: function value() {
-	            var i = arguments.length;
-	            var args = new Array(i);
-	            while (i--) {
-	                args[i] = arguments[i];
-	            }
-	            var data = this.__data__;
-	            var root = this.root;
-	            var result = origin.apply(data, args);
-	            var inserted;
-	            switch (method) {
-	                case 'push':
-	                    inserted = args;
-	                case 'unshift':
-	                    inserted = args;
-	                case 'splice':
-	                    inserted = args.slice(2);
-	            }
-	            if (inserted) {
-	                this.observeArray(inserted);
-	            }
-	            root.$emit(this.spath);
-	            return result;
-	        },
-	        writable: true,
-	        enumerable: false,
-	        configurable: false
-	    });
-	});
 
 /***/ }
 /******/ ])
