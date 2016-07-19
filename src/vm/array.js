@@ -2,6 +2,7 @@
  * Created by cgspine on 16/7/19.
  */
 import { rword } from '../util/const'
+import { Observable } from  './observable'
 
 const arrayProto = Array.prototype
 
@@ -24,6 +25,7 @@ export const arrayMethods = Object.create(arrayProto)
             }
 
             var size = this.length
+            var self = this
             var result = origin.apply(this, args)
             var inserted
             switch(method){
@@ -35,11 +37,15 @@ export const arrayMethods = Object.create(arrayProto)
                     inserted = args.slice(2)
             }
             if (inserted) {
-                ob.observeArray(inserted)
+                inserted.forEach(function (el) {
+                    var index = self.indexOf(el)
+                    ob.arrayAdapter(el, index)
+                })
             }
             if(this.length != size) {
                 ob.root.$emit(ob.spath.length > 0 ? ob.spath + '.length' : 'length', size, this.length)
             }
+            
             ob.root.$emit(this.spath)
             return result
         },
@@ -49,3 +55,24 @@ export const arrayMethods = Object.create(arrayProto)
     })
 
 })
+
+Object.defineProperty(arrayMethods, '$get', {
+    value: function (index) {
+
+        var item = this[index]
+        return item.__ob__ || item
+    },
+    writable:true,
+    enumerable: false,
+    configurable: false
+})
+
+Object.defineProperty(arrayMethods, '$set', {
+    value: function (index , value) {
+        this.splice(index,1, value)
+    },
+    writable:true,
+    enumerable: false,
+    configurable: false
+})
+

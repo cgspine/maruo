@@ -266,9 +266,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (definition.hasOwnProperty(key)) {
 	            val = values[key] = definition[key];
 	            if (!this.isPropSkip(key, val)) {
-	                sid = options.id + '.' + key;
-	                spath = this.spath.length > 0 ? this.spath + '.' + key : key;
-	                this.makePropAccessor(this.__data__, sid, spath, key);
+	                this.makePropAccessor(key);
 	            } else if (typeof val === 'function') {
 	                this.makeFuncAccessor(key, val);
 	            }
@@ -297,7 +295,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 	
 	Observable.prototype.observeArray = function (definition, options) {
-	    def(this.__data__, '__array__', Object.create(null));
 	    this.proxy('length');
 	    // 劫持数组的方法
 	    for (var i = 0; i < arrayKeys.length; i++) {
@@ -310,7 +307,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	function defArrayMethods(ob, key, val) {
 	    Object.defineProperty(ob, key, {
 	        value: function value() {
-	            val.apply(ob, arguments);
+	            return val.apply(ob, arguments);
 	        },
 	        writable: true,
 	        configurable: true,
@@ -349,10 +346,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @param sid
 	 * @param key
 	 */
-	Observable.prototype.makePropAccessor = function (ob, sid, spath, key) {
+	Observable.prototype.makePropAccessor = function (key) {
 	    var val = NaN;
 	    var root = this.root;
-	    Object.defineProperty(ob, key, {
+	    var sid = this.id + '.' + 'key';
+	    var spath = this.spath.length > 0 ? this.spath + '.' + key : key;
+	    Object.defineProperty(this.__data__, key, {
 	        get: function get() {
 	            return val.__data__ || val;
 	        },
@@ -396,18 +395,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 	
 	Observable.prototype.makeArrayAccessor = function (array) {
-	    var i, l, arr, sid, spath, key;
+	    var i, l, el;
 	
 	    for (i = 0, l = array.length; i < l; i++) {
-	        arr = array[i];
-	        this.__data__[i] = arr;
-	
-	        key = '' + i;
-	        sid = this.id + '.' + key;
-	        spath = this.spath + '.' + key;
-	        this.makePropAccessor(this.__data__.__array__, sid, spath, arr);
-	        this.proxy(key);
+	        el = array[i];
+	        el = this.arrayAdapter(el, i);
+	        this.__data__[i] = el;
 	    }
+	};
+	
+	Observable.prototype.arrayAdapter = function (element, index) {
+	    if (element !== null && typeof element === 'object') {
+	        element.__ob__ = new Observable(element, {
+	            id: this.id + '[' + index + ']',
+	            spath: this.spath + '[' + index + ']',
+	            root: this.root
+	        });
+	        return element;
+	    }
+	    return element;
 	};
 	
 	Observable.prototype.isPropSkip = function (key, value) {
@@ -578,6 +584,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _utilConst = __webpack_require__(2);
 	
+	var _observable = __webpack_require__(4);
+	
 	var arrayProto = Array.prototype;
 	
 	var arrayMethods = Object.create(arrayProto);
@@ -600,6 +608,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	
 	            var size = this.length;
+	            var self = this;
 	            var result = origin.apply(this, args);
 	            var inserted;
 	            switch (method) {
@@ -611,11 +620,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    inserted = args.slice(2);
 	            }
 	            if (inserted) {
-	                ob.observeArray(inserted);
+	                inserted.forEach(function (el) {
+	                    var index = self.indexOf(el);
+	                    ob.arrayAdapter(el, index);
+	                });
 	            }
 	            if (this.length != size) {
 	                ob.root.$emit(ob.spath.length > 0 ? ob.spath + '.length' : 'length', size, this.length);
 	            }
+	
 	            ob.root.$emit(this.spath);
 	            return result;
 	        },
@@ -623,6 +636,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	        enumerable: false,
 	        configurable: false
 	    });
+	});
+	
+	Object.defineProperty(arrayMethods, '$get', {
+	    value: function value(index) {
+	
+	        var item = this[index];
+	        return item.__ob__ || item;
+	    },
+	    writable: true,
+	    enumerable: false,
+	    configurable: false
+	});
+	
+	Object.defineProperty(arrayMethods, '$set', {
+	    value: function value(index, _value) {
+	        this.splice(index, 1, _value);
+	    },
+	    writable: true,
+	    enumerable: false,
+	    configurable: false
 	});
 
 /***/ },

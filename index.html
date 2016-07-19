@@ -14,24 +14,34 @@
                 "d":"e",
                 "f": "g"
             },
-            "ff":[1,2,3,4,5]
+            "ff":[1,2,3,{
+                "aa":"bb"
+            },5]
         })
 
-        vm.$watch("c.d", function (oldVal, newVal) {
-            console.log("监听到prop变化: oldVal = " + oldVal + " ; newVal = " + newVal )
+//        vm.$watch("c.d", function (oldVal, newVal) {
+//            console.log("监听到prop变化: oldVal = " + oldVal + " ; newVal = " + newVal )
+//        })
+//
+//        vm.$watch("ff.length", function (oldVal, newVal) {
+//            console.log("监听到数组长度变化: oldVal = " + oldVal + " ; newVal = " + newVal )
+//        })
+
+        vm.$watch("ff[3].aa", function (oldVal, newVal) {
+            console.log("监听到数组ff[3].aa里面对象的值改变: oldVal = " + oldVal + " ; newVal = " + newVal )
         })
 
-        vm.$watch("ff.length", function (oldVal, newVal) {
-            console.log("监听到数组长度变化: oldVal = " + oldVal + " ; newVal = " + newVal )
-        })
+//        setTimeout(function () {
+//            vm.c.d = "改变后的值"
+//        },3000)
+//
+//        setTimeout(function () {
+//            vm.ff.push("cc")
+//        },2000)
 
         setTimeout(function () {
-            vm.c.d = "改变后的值"
-        },3000)
-
-        setTimeout(function () {
-            vm.ff.push("cc")
-        },2000)
+            vm.ff.$get(3).aa = "ee"
+        },1000)
     </script>
 </body>
 </html>
