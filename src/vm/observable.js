@@ -3,7 +3,7 @@
  */
 
 import { toJson } from  '../util/data'
-import { noop,hideProperty } from  '../util/index'
+import { makeHashCode,hideProperty } from  '../util/index'
 import { arrayMethods } from  './array'
 import { oneObject } from '../util/index'
 
@@ -25,12 +25,13 @@ export function Observable(definition, options) {
     this.id = options.id || ''
     this.spath = options.spath || ''
     this.root = options.root || this
+    this.hashCode = options.hashCode || makeHashCode('$')
     this.$events = {}
     if (Array.isArray(definition)) {
-        this.__data__ = [];
+        this.__data__ = options.__data__ || [];
         this.observeArray(definition, options)
     } else {
-        this.__data__ = Object.create(null);
+        this.__data__ = options.__data__ || Object.create(null);
         this.$skipArray = {}
         if (definition.$skipArray) {
             this.$skipArray =  oneObject(definition.$skipArray)
@@ -65,7 +66,7 @@ Observable.prototype.$emit = function (expr, oldVal, newVal) {
 }
 
 Observable.prototype.observeObject = function (definition,options) {
-    var key,val,sid, spath, values = {}
+    var key,val, values = {}
     for (key in definition) {
         if(definition.hasOwnProperty(key)){
             val = values[key] = definition[key]
@@ -209,13 +210,17 @@ Observable.prototype.makeArrayAccessor = function (array) {
     }
 }
 
-Observable.prototype.arrayAdapter = function(element, index) {
+// 数组插入元素、删除元素等都会使得排序发生变化,因此subscript就会非常不靠谱,所以需要引入hashCode
+Observable.prototype.arrayAdapter = function(element) {
     if(element !== null && typeof element === 'object'){
-        element.__ob__ = new Observable(element, {
-            id: this.id + '[' + index +']',
-            spath: this.spath + '[' + index + ']',
-            root: this.root
-        })
+        var hashCode = makeHashCode('$')
+        def(element, '__ob__', new Observable(element, {
+            id: this.id + '.*',
+            spath: this.spath + '.*',
+            root: this.root,
+            hashCode: hashCode,
+            __data__: element
+        }))
         return element
     }
     return element

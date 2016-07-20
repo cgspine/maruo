@@ -16,32 +16,47 @@
             },
             "ff":[1,2,3,{
                 "aa":"bb"
-            },5]
+            },5],
+            "arr":[1,2,3,["33","bb"]]
         })
 
+//        //================== 对象属性监听 =======================
 //        vm.$watch("c.d", function (oldVal, newVal) {
 //            console.log("监听到prop变化: oldVal = " + oldVal + " ; newVal = " + newVal )
 //        })
-//
-//        vm.$watch("ff.length", function (oldVal, newVal) {
-//            console.log("监听到数组长度变化: oldVal = " + oldVal + " ; newVal = " + newVal )
-//        })
-
-        vm.$watch("ff[3].aa", function (oldVal, newVal) {
-            console.log("监听到数组ff[3].aa里面对象的值改变: oldVal = " + oldVal + " ; newVal = " + newVal )
-        })
-
 //        setTimeout(function () {
 //            vm.c.d = "改变后的值"
 //        },3000)
-//
+
+
+//        //=================== 数组长度监听 ======================
+//        vm.$watch("ff.length", function (oldVal, newVal) {
+//            console.log("监听到数组长度变化: oldVal = " + oldVal + " ; newVal = " + newVal )
+//        })
 //        setTimeout(function () {
 //            vm.ff.push("cc")
 //        },2000)
 
+        // ====================== 数组元素的变化监听 ===================
+        vm.$watch("arr.*",function () {
+            console.log(`监听到数组嵌套数组的值f改变:` )
+            console.log(vm.arr)
+        })
+
         setTimeout(function () {
-            vm.ff.$get(3).aa = "ee"
+            vm.arr.$get(3).reverse()
         },1000)
+
+
+        // ====================== 数组里面嵌套对象的监听 ===================
+//        vm.$watch("ff.*.aa", function (oldVal, newVal) {
+//            console.log("监听到数组里面对象的值ff.*.aa改变: oldVal = " + oldVal + " ; newVal = " + newVal )
+//        })
+//        setTimeout(function () {
+//            vm.ff.$get(3).aa = "ee"
+//        },1000)
+
+
     </script>
 </body>
 </html>

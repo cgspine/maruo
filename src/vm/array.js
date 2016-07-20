@@ -45,8 +45,7 @@ export const arrayMethods = Object.create(arrayProto)
             if(this.length != size) {
                 ob.root.$emit(ob.spath.length > 0 ? ob.spath + '.length' : 'length', size, this.length)
             }
-            
-            ob.root.$emit(this.spath)
+            ob.root.$emit(ob.spath)
             return result
         },
         writable:true,
@@ -60,7 +59,10 @@ Object.defineProperty(arrayMethods, '$get', {
     value: function (index) {
 
         var item = this[index]
-        return item.__ob__ || item
+        if(item.__ob__){
+            return item.__ob__.__data__
+        }
+        return item
     },
     writable:true,
     enumerable: false,

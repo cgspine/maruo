@@ -218,12 +218,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.id = options.id || '';
 	    this.spath = options.spath || '';
 	    this.root = options.root || this;
+	    this.hashCode = options.hashCode || _utilIndex.makeHashCode('$');
 	    this.$events = {};
 	    if (Array.isArray(definition)) {
-	        this.__data__ = [];
+	        this.__data__ = options.__data__ || [];
 	        this.observeArray(definition, options);
 	    } else {
-	        this.__data__ = Object.create(null);
+	        this.__data__ = options.__data__ || Object.create(null);
 	        this.$skipArray = {};
 	        if (definition.$skipArray) {
 	            this.$skipArray = _utilIndex.oneObject(definition.$skipArray);
@@ -259,8 +260,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	Observable.prototype.observeObject = function (definition, options) {
 	    var key,
 	        val,
-	        sid,
-	        spath,
 	        values = {};
 	    for (key in definition) {
 	        if (definition.hasOwnProperty(key)) {
@@ -404,13 +403,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	};
 	
-	Observable.prototype.arrayAdapter = function (element, index) {
+	// 数组插入元素、删除元素等都会使得排序发生变化,因此subscript就会非常不靠谱,所以需要引入hashCode
+	Observable.prototype.arrayAdapter = function (element) {
 	    if (element !== null && typeof element === 'object') {
-	        element.__ob__ = new Observable(element, {
-	            id: this.id + '[' + index + ']',
-	            spath: this.spath + '[' + index + ']',
-	            root: this.root
-	        });
+	        var hashCode = _utilIndex.makeHashCode('$');
+	        def(element, '__ob__', new Observable(element, {
+	            id: this.id + '.*',
+	            spath: this.spath + '.*',
+	            root: this.root,
+	            hashCode: hashCode,
+	            __data__: element
+	        }));
 	        return element;
 	    }
 	    return element;
@@ -628,8 +631,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (this.length != size) {
 	                ob.root.$emit(ob.spath.length > 0 ? ob.spath + '.length' : 'length', size, this.length);
 	            }
-	
-	            ob.root.$emit(this.spath);
+	            ob.root.$emit(ob.spath);
 	            return result;
 	        },
 	        writable: true,
@@ -642,7 +644,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function value(index) {
 	
 	        var item = this[index];
-	        return item.__ob__ || item;
+	        if (item.__ob__) {
+	            return item.__ob__.__data__;
+	        }
+	        return item;
 	    },
 	    writable: true,
 	    enumerable: false,
