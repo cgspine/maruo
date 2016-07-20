@@ -64,13 +64,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _coreIndex = __webpack_require__(1);
+	var _core = __webpack_require__(1);
 	
-	var _coreIndex2 = _interopRequireDefault(_coreIndex);
+	var _core2 = _interopRequireDefault(_core);
 	
-	var _vmIndex = __webpack_require__(3);
+	var _vm = __webpack_require__(3);
 	
-	var _vmIndex2 = _interopRequireDefault(_vmIndex);
+	var _vm2 = _interopRequireDefault(_vm);
+	
+	var _event = __webpack_require__(14);
+	
+	var _event2 = _interopRequireDefault(_event);
+	
+	var _dom = __webpack_require__(13);
+	
+	var _dom2 = _interopRequireDefault(_dom);
 	
 	__webpack_require__(11);
 	
@@ -86,8 +94,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	maruo.vms = {};
 	
-	_coreIndex2['default'](maruo);
-	_vmIndex2['default'](maruo);
+	_core2['default'](maruo);
+	_vm2['default'](maruo);
+	_event2['default'](maruo);
+	_dom2['default'](maruo);
 	
 	exports['default'] = maruo;
 	module.exports = exports['default'];
@@ -177,8 +187,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	        return maruo.vms[$id] = vm;
 	    };
-	
-	    maruo.scan = function (el) {};
 	}
 	
 	module.exports = exports['default'];
@@ -754,6 +762,242 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.push(el);
 	    }
 	};
+
+/***/ },
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/21.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	exports['default'] = mixinDom;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _ready = __webpack_require__(15);
+	
+	var _ready2 = _interopRequireDefault(_ready);
+	
+	var _scan = __webpack_require__(17);
+	
+	var _scan2 = _interopRequireDefault(_scan);
+	
+	function mixinDom(maruo) {
+	    _ready2['default'](function () {
+	        _scan2['default'](document.body, maruo);
+	    });
+	    maruo.scan = _scan2['default'];
+	}
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 14 */
+/***/ function(module, exports) {
+
+	/**
+	 * Created by cgspine on 16/7/21.
+	 */
+	
+	"use strict";
+	
+	exports.__esModule = true;
+	exports["default"] = mixinEvent;
+	
+	function mixinEvent(maruo) {
+	    maruo.bind = function (el, type, fn) {
+	        el.addEventListener(type, fn);
+	    };
+	}
+	
+	module.exports = exports["default"];
+
+/***/ },
+/* 15 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/21.
+	 */
+	
+	'use strict';
+	
+	exports.__esModule = true;
+	exports['default'] = ready;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _browser = __webpack_require__(16);
+	
+	var _browser2 = _interopRequireDefault(_browser);
+	
+	var document = _browser2['default'].document;
+	var window = _browser2['default'].window;
+	
+	var readyList = [],
+	    isReady;
+	var fireReady = function fireReady(fn) {
+	    isReady = true;
+	    while (fn = readyList.shift()) {
+	        fn();
+	    }
+	};
+	
+	if (document.readyState === 'complete') {
+	    setTimeout(fireReady);
+	} else {
+	    document.addEventListener('DOMContentLoaded', fireReady);
+	}
+	
+	window.addEventListener('load', fireReady);
+	
+	function ready(fn) {
+	    if (!isReady) {
+	        readyList.push(fn);
+	    } else {
+	        fn();
+	    }
+	}
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 16 */
+/***/ function(module, exports) {
+
+	/* WEBPACK VAR INJECTION */(function(global) {/**
+	 * Created by cgspine on 16/7/21.
+	 */
+	
+	'use strict';
+	
+	exports.__esModule = true;
+	var browser = {
+	    window: global,
+	    document: { //方便在nodejs环境不会报错
+	        createElement: function createElement() {
+	            return {};
+	        },
+	        createElementNS: function createElementNS() {
+	            return {};
+	        },
+	        contains: Boolean
+	    },
+	    root: {
+	        outerHTML: 'x'
+	    },
+	    singletonDiv: {},
+	    singletonFragment: null
+	};
+	
+	if (window.location && window.navigator && window.window) {
+	    var document = window.document;
+	    browser.document = document;
+	    browser.root = document.documentElement;
+	    browser.singletonDiv = document.createElement('div');
+	    browser.singletonFragment = document.createDocumentFragment();
+	}
+	
+	exports['default'] = browser;
+	module.exports = exports['default'];
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
+
+/***/ },
+/* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/21.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _class = __webpack_require__(18);
+	
+	var _class2 = _interopRequireDefault(_class);
+	
+	var _utilLog = __webpack_require__(9);
+	
+	function getController(a) {
+	    return a.getAttribute('m-controller') || a.getAttribute('m-important');
+	}
+	
+	function scan(els, maruo) {
+	    // 不能这样玩, el.childNodes返回nodeList(类数组),并不是Array
+	    // els = Array.isArray(els) ? els : [els]
+	    maruo = maruo || this;
+	    for (var i = 0, el; el = els[i++];) {
+	        if (el.nodeType === 1) {
+	            var $id = getController(el);
+	            var vm = maruo.vms[$id];
+	            if (vm && !vm.$el) {
+	                _class2['default'].removeClass(el, 'm-controller');
+	                vm.$el = el;
+	                console.log("hahahahahaha");
+	            } else if (!$id) {
+	                scan(el.childNodes, maruo);
+	            }
+	        }
+	    }
+	}
+	
+	exports['default'] = function (els, maruo) {
+	    if (!els || !els.nodeType) {
+	        _utilLog.warn('[avalon.scan] first argument must be element , documentFragment, or document');
+	        return;
+	    }
+	    scan([els], maruo);
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 18 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/21.
+	 */
+	
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	var _utilConst = __webpack_require__(2);
+	
+	var o = Object.create(null);
+	
+	var rnoWhite = /\S+/g;
+	'add, remove'.replace(_utilConst.rword, function (method) {
+	    o[method + 'Class'] = function (el, cls) {
+	        if (cls && typeof cls === 'string' && el.nodeType === 1) {
+	            cls.replace(rnoWhite, function (c) {
+	                el.classList[method](c);
+	            });
+	        }
+	    };
+	});
+	
+	o.hasClass = function (el, cls) {
+	    return el.nodeType === 1 && el.classList.contains(cls);
+	};
+	
+	o.toggleClass = function (el, val, stateVal) {
+	    var isBool = typeof stateVal === 'boolean';
+	    String(val).replace(rnoWhite, function (c) {
+	        var state = isBool ? stateVal : !o.hasClass(el, c);
+	        o[state ? 'addClass' : 'removeClass'](el, c);
+	    });
+	};
+	
+	exports['default'] = o;
+	module.exports = exports['default'];
 
 /***/ }
 /******/ ])

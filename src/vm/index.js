@@ -18,8 +18,4 @@ export default function mixinViewModel(maruo){
         })
         return maruo.vms[$id] = vm
     }
-    
-    maruo.scan = function (el) {
-        
-    }
 }

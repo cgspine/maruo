@@ -5,6 +5,10 @@
     <title>maruo</title>
 </head>
 <body>
+    <div m-controller="watch">
+        <input m-model="watch.prop" type="text"/>
+        <p m-model="watch.prop"></p>
+    </div>
     <script src="dist/maruo.js"></script>
     <script>
         var vm = maruo.define({

@@ -4,8 +4,10 @@
 
 require('./lang')
 
-import mixinCore from './core/index'
-import mixinViewModel from './vm/index'
+import mixinCore from './core'
+import mixinViewModel from './vm'
+import mixinEvent from  './event'
+import mixinDom from './dom'
 
 
 
@@ -24,5 +26,7 @@ maruo.vms = {}
 
 mixinCore(maruo)
 mixinViewModel(maruo)
+mixinEvent(maruo)
+mixinDom(maruo)
 
 export default maruo
