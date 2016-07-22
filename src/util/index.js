@@ -34,6 +34,7 @@ export function hyphenate(str){
 }
 
 
+
 //生成UUID http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
 export const makeHashCode = typeof performance !== 'undefined' && performance.now ?
     function (prefix) {

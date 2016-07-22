@@ -72,15 +72,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _vm2 = _interopRequireDefault(_vm);
 	
-	var _event = __webpack_require__(14);
+	var _event = __webpack_require__(11);
 	
 	var _event2 = _interopRequireDefault(_event);
 	
-	var _dom = __webpack_require__(13);
+	var _dom = __webpack_require__(12);
 	
 	var _dom2 = _interopRequireDefault(_dom);
 	
-	__webpack_require__(11);
+	__webpack_require__(17);
 	
 	function maruo(el) {
 	    return new maruo.init(el);
@@ -731,71 +731,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 11 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Created by cgspine on 16/7/18.
-	 */
-	
-	'use strict';
-	
-	__webpack_require__(12);
-
-/***/ },
-/* 12 */
-/***/ function(module, exports) {
-
-	/**
-	 * Created by cgspine on 16/7/18.
-	 */
-	
-	"use strict";
-	
-	var arrProto = Array.prototype;
-	
-	Array.prototype.contain = function (el) {
-	    return this.indexOf(el) !== -1;
-	};
-	
-	Array.prototype.ensure = function (el) {
-	    if (!this.contain(el)) {
-	        this.push(el);
-	    }
-	};
-
-/***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Created by cgspine on 16/7/21.
-	 */
-	'use strict';
-	
-	exports.__esModule = true;
-	exports['default'] = mixinDom;
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	var _ready = __webpack_require__(15);
-	
-	var _ready2 = _interopRequireDefault(_ready);
-	
-	var _scan = __webpack_require__(17);
-	
-	var _scan2 = _interopRequireDefault(_scan);
-	
-	function mixinDom(maruo) {
-	    _ready2['default'](function () {
-	        _scan2['default'](document.body, maruo);
-	    });
-	    maruo.scan = _scan2['default'];
-	}
-	
-	module.exports = exports['default'];
-
-/***/ },
-/* 14 */
 /***/ function(module, exports) {
 
 	/**
@@ -816,7 +751,38 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports["default"];
 
 /***/ },
-/* 15 */
+/* 12 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/21.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	exports['default'] = mixinDom;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _ready = __webpack_require__(13);
+	
+	var _ready2 = _interopRequireDefault(_ready);
+	
+	var _scan = __webpack_require__(15);
+	
+	var _scan2 = _interopRequireDefault(_scan);
+	
+	function mixinDom(maruo) {
+	    _ready2['default'](function () {
+	        _scan2['default'](document.body, maruo);
+	    });
+	    maruo.scan = _scan2['default'];
+	}
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -830,7 +796,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _browser = __webpack_require__(16);
+	var _browser = __webpack_require__(14);
 	
 	var _browser2 = _interopRequireDefault(_browser);
 	
@@ -865,7 +831,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 16 */
+/* 14 */
 /***/ function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {/**
@@ -906,7 +872,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 17 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -918,7 +884,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _class = __webpack_require__(18);
+	var _class = __webpack_require__(16);
 	
 	var _class2 = _interopRequireDefault(_class);
 	
@@ -958,7 +924,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 18 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -998,6 +964,40 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	exports['default'] = o;
 	module.exports = exports['default'];
+
+/***/ },
+/* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/18.
+	 */
+	
+	'use strict';
+	
+	__webpack_require__(18);
+
+/***/ },
+/* 18 */
+/***/ function(module, exports) {
+
+	/**
+	 * Created by cgspine on 16/7/18.
+	 */
+	
+	"use strict";
+	
+	var arrProto = Array.prototype;
+	
+	Array.prototype.contain = function (el) {
+	    return this.indexOf(el) !== -1;
+	};
+	
+	Array.prototype.ensure = function (el) {
+	    if (!this.contain(el)) {
+	        this.push(el);
+	    }
+	};
 
 /***/ }
 /******/ ])
