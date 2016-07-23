@@ -3,10 +3,11 @@
  */
 import browser from '../dom/browser'
 
-function VComment(text) {
+export function VComment(text) {
     if (typeof text === 'string') {
         this.type = '#comment'
         this.nodeValue = text
+        this.skipContent = true
         this.nodeType = 8
     } else{
         for(var i in text){
@@ -26,5 +27,3 @@ VComment.prototype = {
         return `<!-- ${this.nodeValue} -->`
     }
 }
-
-export default VComment

@@ -64,6 +64,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
+	var _maruo = __webpack_require__(32);
+	
+	var _maruo2 = _interopRequireDefault(_maruo);
+	
 	var _core = __webpack_require__(1);
 	
 	var _core2 = _interopRequireDefault(_core);
@@ -72,34 +76,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _vm2 = _interopRequireDefault(_vm);
 	
-	var _event = __webpack_require__(11);
+	var _event = __webpack_require__(13);
 	
 	var _event2 = _interopRequireDefault(_event);
 	
-	var _dom = __webpack_require__(12);
+	var _dom = __webpack_require__(14);
 	
 	var _dom2 = _interopRequireDefault(_dom);
 	
-	__webpack_require__(17);
+	__webpack_require__(19);
 	
-	function maruo(el) {
-	    return new maruo.init(el);
-	}
+	_core2['default'](_maruo2['default']);
+	_vm2['default'](_maruo2['default']);
+	_event2['default'](_maruo2['default']);
+	_dom2['default'](_maruo2['default']);
 	
-	maruo.init = function (el) {
-	    this[0] = this.el = el;
-	};
-	
-	maruo.fn = maruo.prototype = maruo.init.prototype;
-	
-	maruo.vms = {};
-	
-	_core2['default'](maruo);
-	_vm2['default'](maruo);
-	_event2['default'](maruo);
-	_dom2['default'](maruo);
-	
-	exports['default'] = maruo;
+	exports['default'] = _maruo2['default'];
 	module.exports = exports['default'];
 
 /***/ },
@@ -208,7 +200,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _utilIndex = __webpack_require__(7);
 	
-	var _array = __webpack_require__(8);
+	var _array = __webpack_require__(12);
 	
 	var arrayKeys = Object.getOwnPropertyNames(_array.arrayMethods);
 	
@@ -223,7 +215,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function Observable(definition, options) {
 	    options = options || {};
-	    this.id = options.id || '';
+	    this.$id = options.id || '';
 	    this.spath = options.spath || '';
 	    this.root = options.root || this;
 	    this.hashCode = options.hashCode || _utilIndex.makeHashCode('$');
@@ -356,7 +348,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	Observable.prototype.makePropAccessor = function (key) {
 	    var val = NaN;
 	    var root = this.root;
-	    var sid = this.id + '.' + 'key';
+	    var sid = this.$id + '.' + 'key';
 	    var spath = this.spath.length > 0 ? this.spath + '.' + key : key;
 	    Object.defineProperty(this.__data__, key, {
 	        get: function get() {
@@ -524,9 +516,51 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 	
 	exports.__esModule = true;
+	
+	function _interopExportWildcard(obj, defaults) { var newObj = defaults({}, obj); delete newObj['default']; return newObj; }
+	
+	function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+	
+	var _lang = __webpack_require__(8);
+	
+	_defaults(exports, _interopExportWildcard(_lang, _defaults));
+	
+	var _const = __webpack_require__(2);
+	
+	_defaults(exports, _interopExportWildcard(_const, _defaults));
+	
+	var _data = __webpack_require__(5);
+	
+	_defaults(exports, _interopExportWildcard(_data, _defaults));
+	
+	var _is = __webpack_require__(6);
+	
+	_defaults(exports, _interopExportWildcard(_is, _defaults));
+	
+	var _log = __webpack_require__(9);
+	
+	_defaults(exports, _interopExportWildcard(_log, _defaults));
+	
+	var _dom = __webpack_require__(11);
+	
+	_defaults(exports, _interopExportWildcard(_dom, _defaults));
+
+/***/ },
+/* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/23.
+	 */
+	
+	'use strict';
+	
+	exports.__esModule = true;
 	exports.oneObject = oneObject;
+	exports.stripQuotes = stripQuotes;
 	exports.camelize = camelize;
 	exports.hyphenate = hyphenate;
+	exports.escapeRegExp = escapeRegExp;
 	exports.hideProperty = hideProperty;
 	
 	var _const = __webpack_require__(2);
@@ -534,6 +568,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var rcamelize = /[-_]([^-_])/g;
 	var rhyphenate = /([a-z\d])([A-Z]+)/g;
 	var rhashcode = /\d\.\d{4}/;
+	var rescape = /[-.*+?^${}()|[\]\/\\]/g;
 	
 	function oneObject(array, val) {
 	    if (typeof array === 'string') {
@@ -549,6 +584,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return result;
 	}
 	
+	/**
+	 * Strip quotes from a string
+	 * @param str
+	 * @returns {String | false}
+	 */
+	
+	function stripQuotes(str) {
+	    var a = str.charCodeAt(0);
+	    var b = str.charCodeAt(str.length - 1);
+	    return a === b && (a === 0x22 || a === 0x27) ? str.slice(1, -1) : str;
+	}
+	
 	function camelize(str) {
 	    str.replace(rcamelize, function (matched, element) {
 	        return element.toUpperCase();
@@ -557,6 +604,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function hyphenate(str) {
 	    return str.replace(rhyphenate, '$1-$2').toLowerCase();
+	}
+	
+	function escapeRegExp(target) {
+	    //http://stevenlevithan.com/regex/xregexp/
+	    //将字符串安全格式化为正则表达式的源码
+	    return (target + '').replace(rescape, '\\$&');
 	}
 	
 	//生成UUID http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
@@ -583,7 +636,238 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 8 */
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/9.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	exports.log = log;
+	exports.warn = warn;
+	exports.err = err;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _config = __webpack_require__(10);
+	
+	var _config2 = _interopRequireDefault(_config);
+	
+	function log() {
+	    if (_config2['default'].debug) {
+	        console.log(arguments);
+	    }
+	}
+	
+	function warn() {
+	    if (_config2['default'].debug) {
+	        console.warn(arguments);
+	    }
+	}
+	
+	function err() {
+	    if (_config2['default'].debug) {
+	        console.error(arguments);
+	    }
+	}
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/9.
+	 */
+	"use strict";
+	
+	exports.__esModule = true;
+	
+	var _util = __webpack_require__(7);
+	
+	var closeTag = "{{";
+	
+	var endTag = "}}";
+	
+	var safeOpenTag, safeCloseTag, rexpr, rexprg, rbind;
+	updateExp();
+	
+	function updateExp() {
+	    safeOpenTag = _util.escapeRegExp(closeTag);
+	
+	    safeCloseTag = _util.escapeRegExp(endTag);
+	
+	    rexpr = new RegExp(safeOpenTag + '([\\s\\S]*)' + safeCloseTag);
+	
+	    rexprg = new RegExp(safeOpenTag + '([\\s\\S]*)' + safeCloseTag, 'g');
+	
+	    rbind = new RegExp(safeOpenTag + '[\\s\\S]*' + safeCloseTag + '|\\bms-|\\bslot\\b');
+	}
+	
+	var config = {
+	
+	    debug: true,
+	
+	    $$skipArray: _util.oneObject('$id,$render,$track,$parent,$element,$watch,$fire,$events,$model,$skipArray,$accessors,$hashcode,$run,$wait,__proxy__,__data__,__const__,__ob__')
+	
+	};
+	
+	Object.defineProperty(config, 'rexpr', {
+	    value: rexpr,
+	    writable: false,
+	    configurable: true,
+	    enumerable: true
+	});
+	
+	Object.defineProperty(config, 'rexprg', {
+	    value: rexprg,
+	    writable: false,
+	    configurable: true,
+	    enumerable: true
+	});
+	
+	Object.defineProperty(config, 'rbind', {
+	    value: rbind,
+	    writable: false,
+	    configurable: true,
+	    enumerable: true
+	});
+	
+	Object.defineProperty(config, 'openTag', Object.defineProperties({
+	    get: function get() {
+	        return openTag;
+	    },
+	
+	    enumerable: true,
+	    configurable: true
+	}, {
+	    "function": {
+	        set: function set(newValue) {
+	            openTag = newValue;
+	            updateExp();
+	        },
+	        configurable: true,
+	        enumerable: true
+	    }
+	}));
+	
+	Object.defineProperty(config, 'closeTag', Object.defineProperties({
+	    get: function get() {
+	        return closeTag;
+	    },
+	
+	    enumerable: true,
+	    configurable: true
+	}, {
+	    "function": {
+	        set: function set(newValue) {
+	            closeTag = newValue;
+	            updateExp();
+	        },
+	        configurable: true,
+	        enumerable: true
+	    }
+	}));
+	
+	exports["default"] = config;
+	module.exports = exports["default"];
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/23.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	exports.unescapeHTML = unescapeHTML;
+	exports.escapeHTML = escapeHTML;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _domBrowser = __webpack_require__(16);
+	
+	var _domBrowser2 = _interopRequireDefault(_domBrowser);
+	
+	var reunescapeHTML = /&(?:amp|lt|gt|quot|#39|#96);/g;
+	var htmlUnescapes = {
+	    '&amp;': '&',
+	    '&lt;': '<',
+	    '&gt;': '>',
+	    '&quot;': '"',
+	    '&#39;': "'",
+	    '&#96;': '`'
+	};
+	
+	function unescapeHTML(string) {
+	    var str = '' + string;
+	    return str.replace(reunescapeHTML, function (c) {
+	        return htmlUnescapes[c];
+	    });
+	}
+	
+	var rescapeHTML = /["'&<>]/;
+	//https://github.com/nthtran/vdom-to-html
+	//将字符串经过 str 转义得到适合在页面中显示的内容, 例如替换 < 为 &lt
+	
+	function escapeHTML(string) {
+	    var str = '' + string;
+	    var match = rescapeHTML.exec(str);
+	
+	    if (!match) {
+	        return str;
+	    }
+	
+	    var escape;
+	    var html = '';
+	    var index = 0;
+	    var lastIndex = 0;
+	
+	    for (index = match.index; index < str.length; index++) {
+	        switch (str.charCodeAt(index)) {
+	            case 34:
+	                // "
+	                escape = '&quot;';
+	                break;
+	            case 38:
+	                // &
+	                escape = '&amp;';
+	                break;
+	            case 39:
+	                // '
+	                escape = '&#39;';
+	                break;
+	            case 60:
+	                // <
+	                escape = '&lt;';
+	                break;
+	            case 62:
+	                // >
+	                escape = '&gt;';
+	                break;
+	            default:
+	                continue;
+	        }
+	
+	        if (lastIndex !== index) {
+	            html += str.substring(lastIndex, index);
+	        }
+	
+	        lastIndex = index + 1;
+	        html += escape;
+	    }
+	
+	    return lastIndex !== index ? html + str.substring(lastIndex, index) : html;
+	}
+	
+	var commonTmpDiv = _domBrowser2['default'].document.createElement('div');
+	exports.commonTmpDiv = commonTmpDiv;
+
+/***/ },
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -672,65 +956,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 
 /***/ },
-/* 9 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Created by cgspine on 16/7/9.
-	 */
-	'use strict';
-	
-	exports.__esModule = true;
-	exports.log = log;
-	exports.warn = warn;
-	exports.err = err;
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	var _config = __webpack_require__(10);
-	
-	var _config2 = _interopRequireDefault(_config);
-	
-	function log() {
-	    if (_config2['default'].debug) {
-	        console.log(arguments);
-	    }
-	}
-	
-	function warn() {
-	    if (_config2['default'].debug) {
-	        console.warn(arguments);
-	    }
-	}
-	
-	function err() {
-	    if (_config2['default'].debug) {
-	        console.error(arguments);
-	    }
-	}
-
-/***/ },
-/* 10 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Created by cgspine on 16/7/9.
-	 */
-	'use strict';
-	
-	exports.__esModule = true;
-	
-	var _util = __webpack_require__(7);
-	
-	exports['default'] = {
-	    debug: true,
-	
-	    $$skipArray: _util.oneObject('$id,$render,$track,$parent,$element,$watch,$fire,$events,$model,$skipArray,$accessors,$hashcode,$run,$wait,__proxy__,__data__,__const__,__ob__')
-	};
-	module.exports = exports['default'];
-
-/***/ },
-/* 11 */
+/* 13 */
 /***/ function(module, exports) {
 
 	/**
@@ -751,7 +977,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports["default"];
 
 /***/ },
-/* 12 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -764,11 +990,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _ready = __webpack_require__(13);
+	var _ready = __webpack_require__(15);
 	
 	var _ready2 = _interopRequireDefault(_ready);
 	
-	var _scan = __webpack_require__(15);
+	var _scan = __webpack_require__(17);
 	
 	var _scan2 = _interopRequireDefault(_scan);
 	
@@ -782,7 +1008,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 13 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -796,7 +1022,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _browser = __webpack_require__(14);
+	var _browser = __webpack_require__(16);
 	
 	var _browser2 = _interopRequireDefault(_browser);
 	
@@ -831,7 +1057,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 14 */
+/* 16 */
 /***/ function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {/**
@@ -872,7 +1098,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 15 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -884,11 +1110,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _class = __webpack_require__(16);
+	var _class = __webpack_require__(18);
 	
 	var _class2 = _interopRequireDefault(_class);
 	
-	var _utilLog = __webpack_require__(9);
+	var _util = __webpack_require__(7);
+	
+	var _compilerLexer = __webpack_require__(33);
+	
+	var _compilerRender = __webpack_require__(34);
+	
+	var _config = __webpack_require__(10);
+	
+	var _config2 = _interopRequireDefault(_config);
 	
 	function getController(a) {
 	    return a.getAttribute('m-controller') || a.getAttribute('m-important');
@@ -905,7 +1139,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (vm && !vm.$el) {
 	                _class2['default'].removeClass(el, 'm-controller');
 	                vm.$el = el;
-	                console.log("hahahahahaha");
+	                var now = new Date();
+	                el.vtree = _compilerLexer.lexer(el.outerHTML);
+	                _compilerLexer.handleDirectives(el.vtree);
+	                var now2 = new Date();
+	                _config2['default'].debug && _util.log('构建虚拟DOM耗时' + (now2 - now) + 'ms');
+	                vm.$render = _compilerRender.render(el.vtree);
+	                console.log(vm.$render(vm));
 	            } else if (!$id) {
 	                scan(el.childNodes, maruo);
 	            }
@@ -915,7 +1155,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	exports['default'] = function (els, maruo) {
 	    if (!els || !els.nodeType) {
-	        _utilLog.warn('[avalon.scan] first argument must be element , documentFragment, or document');
+	        _util.warn('[avalon.scan] first argument must be element , documentFragment, or document');
 	        return;
 	    }
 	    scan([els], maruo);
@@ -924,7 +1164,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 16 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -966,7 +1206,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 17 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -975,10 +1215,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	'use strict';
 	
-	__webpack_require__(18);
+	__webpack_require__(20);
 
 /***/ },
-/* 18 */
+/* 20 */
 /***/ function(module, exports) {
 
 	/**
@@ -998,6 +1238,991 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.push(el);
 	    }
 	};
+
+/***/ },
+/* 21 */,
+/* 22 */,
+/* 23 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/23.
+	 */
+	
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	function _interopExportWildcard(obj, defaults) { var newObj = defaults({}, obj); delete newObj['default']; return newObj; }
+	
+	function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+	
+	var _VElement = __webpack_require__(24);
+	
+	_defaults(exports, _interopExportWildcard(_VElement, _defaults));
+	
+	var _VComment = __webpack_require__(25);
+	
+	_defaults(exports, _interopExportWildcard(_VComment, _defaults));
+	
+	var _VText = __webpack_require__(26);
+	
+	_defaults(exports, _interopExportWildcard(_VText, _defaults));
+
+/***/ },
+/* 24 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/22.
+	 */
+	
+	'use strict';
+	
+	exports.__esModule = true;
+	exports.VElement = VElement;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _domBrowser = __webpack_require__(16);
+	
+	var _domBrowser2 = _interopRequireDefault(_domBrowser);
+	
+	function VElement(type, props, children) {
+	    if (typeof type === 'object') {
+	        for (var i in type) {
+	            this[i] = type[i];
+	        }
+	    } else {
+	        this.nodeType = 1;
+	        this.type = type;
+	        this.props = props;
+	        this.children = children;
+	        this.template = '';
+	        this.isVoidTag = false;
+	    }
+	}
+	
+	function skipFalseOrFunc(obj) {
+	    return obj !== false && Object(obj) !== obj;
+	}
+	
+	VElement.prototype = {
+	    constructor: VElement,
+	    toDOM: function toDOM() {
+	        var tagName = this.type;
+	        var dom = _domBrowser2['default'].document.createElement(tagName);
+	        for (var i in this.props) {
+	            var val = this.props[i];
+	            if (skipFalseOrFunc(val)) {
+	                dom.setAttribute(i, val + '');
+	            }
+	        }
+	        switch (this.type) {
+	            case 'script':
+	                dom.text = this.template;
+	                break;
+	            case 'style':
+	                if ('styleSheet' in dom) {
+	                    dom.setAttribute('type', 'text/css');
+	                    dom.styleSheet.cssText = this.template;
+	                } else {
+	                    dom.innerHTML = this.template;
+	                }
+	                break;
+	            case 'template':
+	                dom.innerHTML = this.template;
+	                break;
+	            case 'noscript':
+	                dom.textContent = this.template;
+	                break;
+	            default:
+	                if (!this.isVoidTag) {
+	                    this.children.forEach(function (c) {
+	                        c && dom.appendChild(c.toDOM());
+	                    });
+	                }
+	                break;
+	        }
+	        return dom;
+	    },
+	    toHTML: function toHTML() {
+	        var arr = [];
+	        for (var i in this.props) {
+	            var val = this.props[i];
+	            if (skipFalseOrFunc(val)) {
+	                arr.push(i + '=' + JSON.stringify(val + ''));
+	            }
+	        }
+	        arr = arr.length ? ' ' + arr.join(' ') : '';
+	        var str = '<' + this.type + arr;
+	        if (this.isVoidTag) {
+	            return str + '/>';
+	        }
+	        str += '>';
+	        if (this.children.length) {
+	            str += this.children.map(function (c) {
+	                return c ? c.toHTML() : '';
+	            }).join('');
+	        } else {
+	            str += this.template || '';
+	        }
+	        return str + '</' + this.type + '>';
+	    }
+	};
+
+/***/ },
+/* 25 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/22.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	exports.VComment = VComment;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _domBrowser = __webpack_require__(16);
+	
+	var _domBrowser2 = _interopRequireDefault(_domBrowser);
+	
+	function VComment(text) {
+	    if (typeof text === 'string') {
+	        this.type = '#comment';
+	        this.nodeValue = text;
+	        this.skipContent = true;
+	        this.nodeType = 8;
+	    } else {
+	        for (var i in text) {
+	            if (text.hasOwnProperty(i)) {
+	                this[i] = text[i];
+	            }
+	        }
+	    }
+	}
+	
+	VComment.prototype = {
+	    constructor: VComment,
+	    toDOM: function toDOM() {
+	        _domBrowser2['default'].document.createComment(this.nodeValue);
+	    },
+	    toHTML: function toHTML() {
+	        return '<!-- ' + this.nodeValue + ' -->';
+	    }
+	};
+
+/***/ },
+/* 26 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/22.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	exports.VText = VText;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _domBrowser = __webpack_require__(16);
+	
+	var _domBrowser2 = _interopRequireDefault(_domBrowser);
+	
+	var _config = __webpack_require__(10);
+	
+	var _config2 = _interopRequireDefault(_config);
+	
+	function VText(text) {
+	    if (typeof text === 'string') {
+	        this.type = 'text';
+	        this.nodeValue = text;
+	        this.nodeType = 3;
+	        this.skipContent = !_config2['default'].rexpr.test(this.nodeValue);
+	    } else {
+	        for (var i in text) {
+	            if (text.hasOwnProperty(i)) {
+	                this[i] = text[i];
+	            }
+	        }
+	    }
+	}
+	
+	VText.prototype = {
+	    constructor: VText,
+	    toDOM: function toDOM() {
+	        _domBrowser2['default'].document.createTextNode(this.nodeValue);
+	    },
+	    toHTML: function toHTML() {
+	        return this.nodeValue;
+	    }
+	};
+
+/***/ },
+/* 27 */,
+/* 28 */,
+/* 29 */,
+/* 30 */,
+/* 31 */
+/***/ function(module, exports) {
+
+	/**
+	 * A doubly linked list-based Least Recently Used (LRU)
+	 * cache. Will keep most recently used items while
+	 * discarding least recently used items when its limit is
+	 * reached. This is a bare-bone version of
+	 * Rasmus Andersson's js-lru:
+	 *
+	 *   https://github.com/rsms/js-lru
+	 *
+	 * @param {Number} limit
+	 * @constructor
+	 */
+	
+	"use strict";
+	
+	exports.__esModule = true;
+	exports["default"] = Cache;
+	
+	function Cache(limit) {
+	    this.size = 0;
+	    this.limit = limit;
+	    this.head = this.tail = undefined;
+	    this._keymap = Object.create(null);
+	}
+	
+	var p = Cache.prototype;
+	
+	/**
+	 * Put <value> into the cache associated with <key>.
+	 * Returns the entry which was removed to make room for
+	 * the new entry. Otherwise undefined is returned.
+	 * (i.e. if there was enough room already).
+	 *
+	 * @param {String} key
+	 * @param {*} value
+	 * @return {Entry|undefined}
+	 */
+	
+	p.put = function (key, value) {
+	    var removed;
+	    if (this.size === this.limit) {
+	        removed = this.shift();
+	    }
+	
+	    var entry = this.get(key, true);
+	    if (!entry) {
+	        entry = {
+	            key: key
+	        };
+	        this._keymap[key] = entry;
+	        if (this.tail) {
+	            this.tail.newer = entry;
+	            entry.older = this.tail;
+	        } else {
+	            this.head = entry;
+	        }
+	        this.tail = entry;
+	        this.size++;
+	    }
+	    entry.value = value;
+	
+	    return removed;
+	};
+	
+	/**
+	 * Purge the least recently used (oldest) entry from the
+	 * cache. Returns the removed entry or undefined if the
+	 * cache was empty.
+	 */
+	
+	p.shift = function () {
+	    var entry = this.head;
+	    if (entry) {
+	        this.head = this.head.newer;
+	        this.head.older = undefined;
+	        entry.newer = entry.older = undefined;
+	        this._keymap[entry.key] = undefined;
+	        this.size--;
+	    }
+	    return entry;
+	};
+	
+	/**
+	 * Get and register recent use of <key>. Returns the value
+	 * associated with <key> or undefined if not in cache.
+	 *
+	 * @param {String} key
+	 * @param {Boolean} returnEntry
+	 * @return {Entry|*}
+	 */
+	
+	p.get = function (key, returnEntry) {
+	    var entry = this._keymap[key];
+	    if (entry === undefined) return;
+	    if (entry === this.tail) {
+	        return returnEntry ? entry : entry.value;
+	    }
+	    // HEAD--------------TAIL
+	    //   <.older   .newer>
+	    //  <--- add direction --
+	    //   A  B  C  <D>  E
+	    if (entry.newer) {
+	        if (entry === this.head) {
+	            this.head = entry.newer;
+	        }
+	        entry.newer.older = entry.older; // C <-- E.
+	    }
+	    if (entry.older) {
+	        entry.older.newer = entry.newer; // C. --> E
+	    }
+	    entry.newer = undefined; // D --x
+	    entry.older = this.tail; // D. --> E
+	    if (this.tail) {
+	        this.tail.newer = entry; // E. <-- D
+	    }
+	    this.tail = entry;
+	    return returnEntry ? entry : entry.value;
+	};
+	module.exports = exports["default"];
+
+/***/ },
+/* 32 */
+/***/ function(module, exports) {
+
+	/**
+	 * Created by cgspine on 16/7/23.
+	 */
+	
+	"use strict";
+	
+	exports.__esModule = true;
+	function maruo(el) {
+	    return new maruo.init(el);
+	}
+	
+	maruo.init = function (el) {
+	    this[0] = this.el = el;
+	};
+	
+	maruo.fn = maruo.prototype = maruo.init.prototype;
+	
+	maruo.vms = {};
+	maruo.scopes = {};
+	maruo.directives = {};
+	
+	exports["default"] = maruo;
+	module.exports = exports["default"];
+
+/***/ },
+/* 33 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/23.
+	 */
+	
+	// https://rubylouvre.gitbooks.io/avalon/content/virtualdom.html
+	
+	'use strict';
+	
+	exports.__esModule = true;
+	exports.lexer = lexer;
+	exports.handleDirectives = handleDirectives;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _vdom = __webpack_require__(23);
+	
+	var _util = __webpack_require__(7);
+	
+	var _config = __webpack_require__(10);
+	
+	var _config2 = _interopRequireDefault(_config);
+	
+	var rnowhite = /\S+/g;
+	var ropenTag = /^<([-A-Za-z0-9_]+)\s*([^>]*?)(\/?)>/;
+	var rendTag = /^<\/([^>]+)>/;
+	
+	// Self-closing tags
+	var voidTag = _util.oneObject('area,base,br,col,command,embed,frame,hr,img,input,link,meta,param,source,track,wbr');
+	var plainTag = _util.oneObject('script,style,textarea,noscript,option,template');
+	
+	/**
+	 * 步骤一: 将传入字符串进行parser,转换为虚拟DOM
+	 */
+	
+	function lexer(str) {
+	    var stack = [];
+	    stack.last = function () {
+	        return stack[stack.length - 1];
+	    };
+	    var ret = [];
+	    var node, i, nodeValue;
+	
+	    do {
+	        node = false;
+	        // text
+	        if (str.charAt(0) !== '<') {
+	            i = str.indexOf('<');
+	            nodeValue = str.slice(0, i);
+	            str = str.slice(i);
+	            node = new _vdom.VText({
+	                type: '#text',
+	                nodeType: 3,
+	                nodeValue: nodeValue
+	            });
+	            if (rnowhite.test(nodeValue)) {
+	                collectNodes(node, stack, ret);
+	            }
+	        }
+	
+	        // comment
+	        if (!node) {
+	            var i = str.indexOf('<!--');
+	            if (i === 0) {
+	                var l = str.indexOf('-->');
+	                if (l === -1) {
+	                    _util.err('注释节点没有闭合: ' + str);
+	                }
+	                nodeValue = str.slice(4, l);
+	                str = str.slice(l + 3);
+	                node = new _vdom.VComment({
+	                    type: '#comment',
+	                    nodeType: 8,
+	                    nodeValue: nodeValue
+	                });
+	                collectNodes(node, stack, ret);
+	            }
+	        }
+	
+	        // element
+	        if (!node) {
+	            var match = str.match(ropenTag);
+	            if (match) {
+	                var type = match[1].toLowerCase();
+	                var isVoidTag = voidTag[type] || match[3] == '\/';
+	                node = new _vdom.VElement({
+	                    type: type,
+	                    nodeType: 1,
+	                    props: {},
+	                    children: [],
+	                    isVoidTag: isVoidTag
+	                });
+	
+	                var attrs = match[2];
+	                if (attrs) {
+	                    collectProps(attrs, node.props);
+	                }
+	
+	                collectNodes(node, stack, ret);
+	
+	                str = str.slice(match[0].length);
+	
+	                if (isVoidTag) {
+	                    node.finishCollect = node.isVoidTag = true;
+	                } else {
+	                    // 这里进入元素盒子里面
+	                    stack.push(node);
+	                    if (plainTag[type]) {
+	                        var index = str.indexOf('</' + type + '>');
+	                        var innerHTML = str.slice(0, index).trim();
+	                        str = str.slice(index);
+	                        if (innerHTML) {
+	                            switch (type) {
+	
+	                                case 'style':
+	                                case 'script':
+	                                case 'noscript':
+	                                case 'template':
+	                                    node.skipContent = true;
+	                                    node.children.push({
+	                                        type: '#text',
+	                                        nodeType: 3,
+	                                        nodeValue: _util.unescapeHTML(innerHTML)
+	                                    });
+	                                    break;
+	                                case 'textarea':
+	                                    node.skipContent = true;
+	                                    node.props.type = 'textarea';
+	                                    node.props.value = _util.unescapeHTML(innerHTML);
+	                                    break;
+	                                case 'option':
+	                                    node.children.push({
+	                                        nodeType: 3,
+	                                        type: '#text',
+	                                        nodeValue: _util.unescapeHTML(innerHTML)
+	                                    });
+	                                    break;
+	                            }
+	                        }
+	                    }
+	                }
+	            }
+	        }
+	
+	        if (!node) {
+	            var match = str.match(rendTag);
+	            if (match) {
+	                var type = match[1].toLowerCase();
+	                var last = stack.last();
+	                if (!last) {
+	                    _util.err(match[0] + '前面缺少<' + type + '>');
+	                } else if (last.type !== type) {
+	                    _util.err(last.type + '没有闭合');
+	                }
+	                node = stack.pop();
+	                node.finishCollect = true;
+	                str = str.slice(match[0].length);
+	            }
+	        }
+	
+	        if (!node) {
+	            break;
+	        }
+	
+	        if (node.finishCollect) {
+	            fireFinishCollect(node, stack, ret);
+	            delete node.fire;
+	        }
+	    } while (str.length);
+	
+	    return ret;
+	}
+	
+	/**
+	 * 对input/textarea元素补上type属性
+	 * ms-*自定义元素补上ms-widget属性
+	 * 对table元素补上tbody
+	 * 在ms-for指令的元素两旁加上 <!--ms-for-->,<!--ms-for-end-->占位符, 并将它们的之间的元素放到一个数组中(表明它们是循环区域)
+	 * 去掉所有只有空白的文本节点
+	 */
+	function fireFinishCollect(node, stack, ret) {
+	    var type = node.type;
+	    var props = node.props;
+	    switch (type) {
+	        case 'input':
+	            if (!props.type) {
+	                props.type = 'text';
+	            }
+	            break;
+	        case 'select':
+	            props.type = type + '-' + props.hasOwnProperty('multiple') ? 'multiple' : 'one';
+	            break;
+	        case 'table':
+	            addTbody(node.children);
+	            break;
+	        default:
+	            break;
+	
+	    }
+	}
+	
+	//如果直接将tr元素写table下面,那么浏览器将将它们(相邻的那几个),放到一个动态创建的tbody底下
+	function addTbody(nodes) {
+	    var tbody,
+	        needHandleTbody = false,
+	        n = nodes.length,
+	        node,
+	        i;
+	    var start = 0,
+	        count = 0; //优化: 后面删除node==0的元素时减少遍历次数
+	
+	    for (i = 0; i < n; i++) {
+	        node = nodes[i];
+	        if (node.type !== 'tr' && node.nodeType === 1) {
+	            tbody = false;
+	        } else {
+	            if (node.type === 'tr') {
+	                needHandleTbody = true;
+	                if (!tbody) {
+	                    tbody = new _vdom.VElement({
+	                        nodeType: 1,
+	                        type: 'tbody',
+	                        children: [],
+	                        props: {}
+	                    });
+	                    nodes[i] = tbody;
+	                    if (start == 0) {
+	                        start = i;
+	                    }
+	                } else {
+	                    nodes[i] = 0;
+	                    count++;
+	                }
+	                tbody.children.push(node);
+	            }
+	        }
+	    }
+	
+	    if (needHandleTbody) {
+	        for (i = start; i < n; i++) {
+	            if (node[i] === 0) {
+	                nodes.splice(i, 1);
+	                i--;
+	                count--;
+	                if (count === 0) {
+	                    break;
+	                }
+	            }
+	        }
+	    }
+	}
+	
+	function collectNodes(node, stack, ret) {
+	    var p = stack.last();
+	    if (p) {
+	        p.children.push(node);
+	    } else {
+	        ret.push(node);
+	    }
+	}
+	
+	function collectProps(attrs, props) {
+	    attrs.replace(rnowhite, function (attr) {
+	        var arr = attr.split('=');
+	        var name = arr[0];
+	        var val = _util.stripQuotes(arr[1]) || '';
+	        if (!(name in props)) {
+	            props[name] = val;
+	        }
+	    });
+	}
+	
+	/**
+	 * 步骤二: 优化
+	 * 对拥有m-*属性的虚拟DOM添加dynamic属性 表明它以后要保持其对应的真实节点
+	 * 对没有m-*属性的元素添加skipAttrs属性,表明以后不需要遍历其属性
+	 * 如果它的子孙没有m-*或插值表达式或m-自定义元素,那么还加上skipContent，表明以后不要遍历其孩子
+	 */
+	
+	function handleDirectives(arr) {
+	    for (var i = 0; i < arr.length; i++) {
+	        hasDirective(arr[i]);
+	    }
+	}
+	
+	function hasDirective(a) {
+	    switch (a.nodeType) {
+	        case 3:
+	            if (_config2['default'].rbind.test(a.nodeValue)) {
+	                a.dynamic = 'expr';
+	                return true;
+	            } else {
+	                a.skipContent = true;
+	                return false;
+	            }
+	        case 8:
+	            if (a.dynamic) {
+	                return true;
+	            } else {
+	                a.skipContent = true;
+	                return false;
+	            }
+	        case 1:
+	            if (a.props['m-skip']) {
+	                a.skipAttrs = true;
+	                a.skipContent = true;
+	                return false;
+	            }
+	            if (/^m\-/.test(a.type) || hasDirectiveAttrs(a.props)) {
+	                a.dynamic = true;
+	            } else {
+	                a.skipAttrs = true;
+	            }
+	            if (a.isVoidTag && !a.dynamic) {
+	                a.skipContent = true;
+	                return false;
+	            }
+	            var hasDirective = childrenHasDirective(a.children);
+	            if (!hasDirective && !a.dynamic) {
+	                a.skipContent = true;
+	                return false;
+	            }
+	            return true;
+	        default:
+	            if (Array.isArray(a)) {
+	                return childrenHasDirective(a);
+	            }
+	    }
+	}
+	
+	function childrenHasDirective(arr) {
+	    var ret = false;
+	    for (var i = 0, el; el = arr[i++];) {
+	        if (hasDirective(el)) {
+	            ret = true;
+	        }
+	    }
+	    return ret;
+	}
+	
+	function hasDirectiveAttrs(props) {
+	    if ('m-skip' in props) return false;
+	    for (var i in props) {
+	        if (i.indexOf('m-') === 0) {
+	            return true;
+	        }
+	    }
+	    return false;
+	}
+
+/***/ },
+/* 34 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/23.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	exports.render = render;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _config = __webpack_require__(10);
+	
+	var _config2 = _interopRequireDefault(_config);
+	
+	var _util = __webpack_require__(7);
+	
+	var _vdom = __webpack_require__(23);
+	
+	var _parseExpr = __webpack_require__(35);
+	
+	var _maruo = __webpack_require__(32);
+	
+	var _maruo2 = _interopRequireDefault(_maruo);
+	
+	var rlineSp = /\n\s*/g;
+	var rentities = /&[a-z0-9#]{2,10};/;
+	
+	/**
+	 * 将虚拟DOM树转换为一个$render方法
+	 */
+	
+	function render(vtree) {
+	    vtree = Array.isArray(vtree) ? vtree : [vtree];
+	    return function (vm) {
+	        var vnodes = [];
+	        var vnode;
+	        for (var i = 0, el; el = vtree[i++];) {
+	            vnode = parseNode(el, vm);
+	            vnodes.push(vnode);
+	        }
+	        return vnodes;
+	    };
+	}
+	
+	function parseNode(vdom) {
+	
+	    switch (vdom.nodeType) {
+	        case 3:
+	            return parseText(vdom);
+	        case 8:
+	            return vdom;
+	        case 1:
+	            var copy = {
+	                props: {},
+	                type: vdom.type,
+	                nodeType: 1
+	            };
+	            return vdom;
+	
+	        default:
+	            if (Array.isArray(vdom)) {}
+	    }
+	}
+	
+	function parseText(vtext, vm) {
+	    var array = extractExpr(vtext.nodeValue); //返回一个数组
+	    var nodeValue = array.map(function (part) {
+	        if (!part.expr) {
+	            return part.value;
+	        }
+	        var scope = vm;
+	        return _parseExpr.parseExpr(str, false).getter();
+	    }).join('');
+	    return new _vdom.VText({
+	        type: '#text',
+	        nodeType: 3,
+	        dynamic: true,
+	        nodeValue: nodeValue
+	    });
+	}
+	
+	/**
+	 * 拆分字符串中的非表达式和表达式
+	 * @param str
+	 * @returns {Array}
+	 */
+	function extractExpr(str) {
+	    var ret = [];
+	    var val, index;
+	    do {
+	        index = str.indexOf(_config2['default'].openTag);
+	        index = index === -1 ? str.length : index;
+	        val = str.slice(0, index);
+	        if (/\S/.test(val)) {
+	            ret.push({
+	                value: decode(val),
+	                epxr: false
+	            });
+	            if (index === str.length) {
+	                break;
+	            }
+	        }
+	        str = str.slice(index + _config2['default'].openTag.length);
+	        if (str) {
+	            index = str.indexOf(_config2['default'].closeTag);
+	            val = str.slice(0, index);
+	            ret.push({
+	                value: _util.unescapeHTML(val.replace(rlineSp, '')),
+	                expr: true
+	            });
+	            str = str.slice(index + _config2['default'].openTag.length);
+	        }
+	    } while (str.length);
+	    return ret;
+	}
+	
+	function decode(str) {
+	    if (rentities.test(str)) {
+	        _util.commonTmpDiv.innerHTML = str;
+	        return _util.commonTmpDiv.innerText || _util.commonTmpDiv.textContent;
+	    }
+	    return str;
+	}
+
+/***/ },
+/* 35 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/23.
+	 */
+	
+	'use strict';
+	
+	exports.__esModule = true;
+	exports.parseExpr = parseExpr;
+	exports.isSimplePath = isSimplePath;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _cache = __webpack_require__(31);
+	
+	var _cache2 = _interopRequireDefault(_cache);
+	
+	var _config = __webpack_require__(10);
+	
+	var _config2 = _interopRequireDefault(_config);
+	
+	var _util = __webpack_require__(7);
+	
+	var exprCachePool = new _cache2['default'](1000);
+	
+	var allowedKeywords = 'Math,Date,this,true,false,null,undefined,Infinity,NaN,' + 'isNaN,isFinite,decodeURI,decodeURIComponent,encodeURI,' + 'encodeURIComponent,parseInt,parseFloat';
+	var rallowedKeywords = new RegExp('^(' + allowedKeywords.replace(/,/g, '\\b|') + '\\b)');
+	
+	// keywords that don't make sense inside expressions
+	var improperKeywords = 'break,case,class,catch,const,continue,debugger,default,' + 'delete,do,else,export,extends,finally,for,function,if,' + 'import,in,instanceof,let,return,super,switch,throw,try,' + 'var,while,with,yield,enum,await,implements,package,' + 'protected,static,interface,private,public';
+	var rimproperKeywords = new RegExp('^(' + improperKeywords.replace(/,/g, '\\b|') + '\\b)');
+	
+	var rws = /\s/g;
+	var rnewline = /\n+/g;
+	var rsave = /[\{,]\s*[\w\$_]+\s*:|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*\$\{|\}(?:[^`\\]|\\.)*`|`(?:[^`\\]|\\.)*`)|new |typeof |void /g;
+	var rrestore = /"(\d+)"/g;
+	var rpathTest = /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*|\['.*?'\]|\[".*?"\]|\[\d+\]|\[[A-Za-z_$][\w$]*\])*$/;
+	var rbooleanLiteral = /^(?:true|false)$/;
+	var rident = /[^\w$\.](?:[A-Za-z_$][\w$]*)/g;
+	
+	function parseExpr(str, needSet) {
+	    str = str.trim();
+	    var hit = exprCachePool.get(str);
+	    if (hit) {
+	        return hit;
+	    }
+	    var ret = {
+	        expr: str,
+	        getter: isSimplePath(str) && str.indexOf('[') < 0 ? makeGetterFn('scope.' + str) : compileGetter(str)
+	    };
+	
+	    if (needSet) {
+	        ret.setter = compileSetter(str);
+	    }
+	
+	    exprCachePool.put(str, ret);
+	
+	    return ret;
+	}
+	
+	function compileSetter(str) {
+	    if (isSimplePath(str) && str.indexOf('[') < 0) {
+	        try {
+	            return new Function('scope', 'val', 'scope.' + str + ' = val;');
+	        } catch (e) {
+	            _config2['default'].debug && _util.warn('Invalid setter expression:  ' + expr);
+	        }
+	    }
+	    return _util.noop;
+	}
+	
+	function makeGetterFn(body) {
+	    try {
+	        return new Function('scope', 'return ' + body + ';');
+	    } catch (e) {
+	        _config2['default'].debug && _util.warn('Invalid expression. ' + 'Generated function body: ' + body);
+	    }
+	}
+	
+	/// 对于语言里的保留字、数字、字符串,不能加'scope.',需要先保存再还原
+	
+	var saved = [];
+	
+	function restore(str, i) {
+	    return saved[i];
+	}
+	
+	function save(str, isString) {
+	    var i = saved.length;
+	    saved[i] = isString ? str.replace(rnewline, '\\n') : str;
+	    return '"' + i + '"';
+	}
+	
+	// 加'scope.'重写
+	function rewrite(raw) {
+	    var c = raw.charAt(0);
+	    var path = raw.slice(1);
+	    if (rallowedKeywords.test(path)) {
+	        return raw;
+	    } else {
+	        path = path.indexOf('"') > -1 ? path.replace(rrestore, restore) : path;
+	        return c + 'scope.' + path;
+	    }
+	}
+	
+	function compileGetter(exp) {
+	    if (rimproperKeywords.test(exp)) {
+	        _config2['default'].debug && _util.warn('Avoid using reserved keywords in expression: ' + exp);
+	    }
+	    saved.length = 0;
+	    var body = exp.replace(rsave, save).replace(rws, '');
+	    body = (' ' + body).replace(rident, rewrite).replace(rrestore, restore);
+	    return makeGetterFn(body);
+	}
+	
+	function isSimplePath(exp) {
+	    return rpathTest.test(exp) &&
+	    // don't treat true/false as paths
+	    !rbooleanLiteral.test(exp) &&
+	    // Math constants e.g. Math.PI, Math.E etc.
+	    exp.slice(0, 5) !== 'Math.';
+	}
 
 /***/ }
 /******/ ])

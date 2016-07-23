@@ -22,7 +22,7 @@ function def(ob, key, value, enumerable) {
 
 export function Observable(definition, options) {
     options = options || {}
-    this.id = options.id || ''
+    this.$id = options.id || ''
     this.spath = options.spath || ''
     this.root = options.root || this
     this.hashCode = options.hashCode || makeHashCode('$')
@@ -155,7 +155,7 @@ Observable.prototype.$model = function () {
 Observable.prototype.makePropAccessor = function (key) {
    var val = NaN
    var root = this.root
-   var sid = this.id + '.' + 'key'
+   var sid = this.$id + '.' + 'key'
    var spath = this.spath.length>0 ? this.spath + '.' + key : key
    Object.defineProperty(this.__data__, key,{
        get: function () {

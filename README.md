@@ -1,2 +1,2 @@
 # maruo
-前端MVVM学习框架，分析与学习avalon、vue等框架，写出自己的风格
+前端MVVM学习框架，一步一步的学习avalon并参考vue等其它框架来打造一个新的框架

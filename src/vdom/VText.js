@@ -2,12 +2,14 @@
  * Created by cgspine on 16/7/22.
  */
 import browser from '../dom/browser'
+import config from '../config'
 
-function VText(text) {
+export function VText(text) {
     if(typeof text === 'string'){
         this.type = 'text'
         this.nodeValue = text
         this.nodeType = 3
+        this.skipContent = !config.rexpr.test(this.nodeValue)
     } else {
         for(var i in text){
             if(text.hasOwnProperty(i)){
@@ -26,5 +28,3 @@ VText.prototype = {
         return this.nodeValue
     }
 }
-
-export default VText

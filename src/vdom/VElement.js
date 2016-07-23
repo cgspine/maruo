@@ -4,7 +4,7 @@
 
 import browser from '../dom/browser'
 
-function VElement(type, props, children) {
+export function VElement(type, props, children) {
     if (typeof type === 'object') {
         for (var i in type) {
             this[i] = type[i]
@@ -20,12 +20,12 @@ function VElement(type, props, children) {
 }
 
 function skipFalseOrFunc(obj) {
-    return obj !== false && (Object(obj) === obj)
+    return obj !== false && (Object(obj) !== obj)
 }
 
 
 VElement.prototype = {
-    constructor: VText,
+    constructor: VElement,
     toDOM: function () {
         var tagName = this.type
         var dom = browser.document.createElement(tagName)
@@ -68,7 +68,7 @@ VElement.prototype = {
         for (var i in this.props) {
             var val = this.props[i]
             if (skipFalseOrFunc(val)) {
-                arr.push(i + '=' + JSON.stringify(this.props[i] + ''))
+                arr.push(i + '=' + JSON.stringify(val + ''))
             }
         }
         arr = arr.length ? ' ' + arr.join(' ') : ''
@@ -82,10 +82,8 @@ VElement.prototype = {
                 return c ? c.toHTML() : ''
             }).join('')
         } else {
-            str += this.template
+            str += this.template || ''
         }
         return str + '</' + this.type + '>'
     }
 }
-
-export default VElement
