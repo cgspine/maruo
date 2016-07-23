@@ -43,7 +43,7 @@ export function parseExpr(str, needSet) {
     var ret = {
         expr: str,
         getter: isSimplePath(str) && str.indexOf('[') < 0
-        ? makeGetterFn('scope.' + str)
+        ? makeGetterFn(str)
             : compileGetter(str)
     }
 
@@ -72,7 +72,7 @@ function compileSetter (str) {
 
 function makeGetterFn (body) {
     try {
-        return new Function('scope', 'return ' + body + ';')
+        return new Function('scope', 'return scope.' + body + ';')
     } catch (e) {
         config.debug && warn(
             'Invalid expression. ' +

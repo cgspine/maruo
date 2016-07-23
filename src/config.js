@@ -3,18 +3,18 @@
  */
 import { oneObject, escapeRegExp } from './util'
 
-var closeTag = "{{"
+var openTag = "{{"
 
-var endTag = "}}"
+var closeTag = "}}"
 
 var safeOpenTag, safeCloseTag, rexpr, rexprg, rbind
 updateExp()
 
 
 function updateExp(){
-    safeOpenTag = escapeRegExp(closeTag)
+    safeOpenTag = escapeRegExp(openTag)
 
-    safeCloseTag = escapeRegExp(endTag)
+    safeCloseTag = escapeRegExp(closeTag)
 
     rexpr = new RegExp(safeOpenTag + '([\\s\\S]*)' + safeCloseTag)
 

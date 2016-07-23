@@ -84,12 +84,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _dom2 = _interopRequireDefault(_dom);
 	
+	var _directives = __webpack_require__(37);
+	
+	var _directives2 = _interopRequireDefault(_directives);
+	
 	__webpack_require__(19);
 	
 	_core2['default'](_maruo2['default']);
 	_vm2['default'](_maruo2['default']);
 	_event2['default'](_maruo2['default']);
 	_dom2['default'](_maruo2['default']);
+	_directives2['default'](_maruo2['default']);
 	
 	exports['default'] = _maruo2['default'];
 	module.exports = exports['default'];
@@ -106,6 +111,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.__esModule = true;
 	
 	var _utilConst = __webpack_require__(2);
+	
+	var _compilerParseExpr = __webpack_require__(35);
 	
 	exports['default'] = function (maruo) {
 	
@@ -128,8 +135,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	    maruo.noop = function () {};
 	
 	    maruo.rword = _utilConst.rword;
+	
+	    maruo.directive = function (name, definition) {
+	        definition.parse = definition.parse || defaultParse;
+	        return maruo.directives[name] = definition;
+	    };
 	};
 	
+	function defaultParse(cur, pre, binding) {
+	    cur[binding.name] = _compilerParseExpr.parseExpr(binding.expr).getter();
+	}
 	module.exports = exports['default'];
 
 /***/ },
@@ -686,17 +701,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _util = __webpack_require__(7);
 	
-	var closeTag = "{{";
+	var openTag = "{{";
 	
-	var endTag = "}}";
+	var closeTag = "}}";
 	
 	var safeOpenTag, safeCloseTag, rexpr, rexprg, rbind;
 	updateExp();
 	
 	function updateExp() {
-	    safeOpenTag = _util.escapeRegExp(closeTag);
+	    safeOpenTag = _util.escapeRegExp(openTag);
 	
-	    safeCloseTag = _util.escapeRegExp(endTag);
+	    safeCloseTag = _util.escapeRegExp(closeTag);
 	
 	    rexpr = new RegExp(safeOpenTag + '([\\s\\S]*)' + safeCloseTag);
 	
@@ -1120,6 +1135,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _compilerRender = __webpack_require__(34);
 	
+	var _compilerBatch = __webpack_require__(39);
+	
+	var _compilerBatch2 = _interopRequireDefault(_compilerBatch);
+	
 	var _config = __webpack_require__(10);
 	
 	var _config2 = _interopRequireDefault(_config);
@@ -1145,7 +1164,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	                var now2 = new Date();
 	                _config2['default'].debug && _util.log('构建虚拟DOM耗时' + (now2 - now) + 'ms');
 	                vm.$render = _compilerRender.render(el.vtree);
-	                console.log(vm.$render(vm));
+	                maruo.scopes[vm.$id] = {
+	                    vmodel: vm,
+	                    isTemp: true
+	                };
+	                var now3 = new Date();
+	                _config2['default'].debug && _util.log('构建当前vm的$render方法用时' + (now3 - now2) + 'ms');
+	                _compilerBatch2['default']($id);
+	                el.outerHTML = vm.$render(vm).map(function (item) {
+	                    return item.toHTML();
+	                }).join('');
 	            } else if (!$id) {
 	                scan(el.childNodes, maruo);
 	            }
@@ -1998,6 +2026,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _maruo2 = _interopRequireDefault(_maruo);
 	
+	var _extractBinding = __webpack_require__(36);
+	
+	var _extractBinding2 = _interopRequireDefault(_extractBinding);
+	
 	var rlineSp = /\n\s*/g;
 	var rentities = /&[a-z0-9#]{2,10};/;
 	
@@ -2007,22 +2039,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function render(vtree) {
 	    vtree = Array.isArray(vtree) ? vtree : [vtree];
-	    return function (vm) {
-	        var vnodes = [];
-	        var vnode;
-	        for (var i = 0, el; el = vtree[i++];) {
-	            vnode = parseNode(el, vm);
-	            vnodes.push(vnode);
-	        }
-	        return vnodes;
+	    return function (scope) {
+	        scope = scope || this;
+	        return parseNodes(vtree, scope);
 	    };
 	}
 	
-	function parseNode(vdom) {
+	function parseNodes(vtree, scope) {
+	    var vnodes = [];
+	    var vnode;
+	    for (var i = 0, el; el = vtree[i++];) {
+	        vnode = parseNode(el, scope);
+	        vnodes.push(vnode);
+	    }
+	    return vnodes;
+	}
 	
+	function parseNode(vdom, scope) {
 	    switch (vdom.nodeType) {
 	        case 3:
-	            return parseText(vdom);
+	            return parseText(vdom, scope);
 	        case 8:
 	            return vdom;
 	        case 1:
@@ -2031,21 +2067,41 @@ return /******/ (function(modules) { // webpackBootstrap
 	                type: vdom.type,
 	                nodeType: 1
 	            };
-	            return vdom;
+	            var bindings = _extractBinding2['default'](copy, vdom.props);
+	            bindings.forEach(function (binding) {
+	                _maruo2['default'].directives[binding.type].parse(copy, vdom, binding, scope);
+	            });
+	            if (vdom.isVoidTag) {
+	                copy.isVoidTag = true;
+	            } else {
+	                if (!('children' in copy)) {
+	                    // directive或许或许会赋值给copy children属性
+	                    var children = vdom.children;
+	                    if (children.length) {
+	                        copy.children = parseNodes(children, scope);
+	                    } else {
+	                        copy.children = [];
+	                    }
+	                }
+	            }
+	
+	            if (vdom.skipContent) copy.skipContent = true;
+	            if (vdom.skipAttrs) copy.skipAttrs = true;
+	
+	            return new _vdom.VElement(copy);
 	
 	        default:
 	            if (Array.isArray(vdom)) {}
 	    }
 	}
 	
-	function parseText(vtext, vm) {
+	function parseText(vtext, scope) {
 	    var array = extractExpr(vtext.nodeValue); //返回一个数组
 	    var nodeValue = array.map(function (part) {
 	        if (!part.expr) {
 	            return part.value;
 	        }
-	        var scope = vm;
-	        return _parseExpr.parseExpr(str, false).getter();
+	        return _parseExpr.parseExpr(part.value, false).getter(scope);
 	    }).join('');
 	    return new _vdom.VText({
 	        type: '#text',
@@ -2149,7 +2205,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    var ret = {
 	        expr: str,
-	        getter: isSimplePath(str) && str.indexOf('[') < 0 ? makeGetterFn('scope.' + str) : compileGetter(str)
+	        getter: isSimplePath(str) && str.indexOf('[') < 0 ? makeGetterFn(str) : compileGetter(str)
 	    };
 	
 	    if (needSet) {
@@ -2174,7 +2230,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function makeGetterFn(body) {
 	    try {
-	        return new Function('scope', 'return ' + body + ';');
+	        return new Function('scope', 'return scope.' + body + ';');
 	    } catch (e) {
 	        _config2['default'].debug && _util.warn('Invalid expression. ' + 'Generated function body: ' + body);
 	    }
@@ -2223,6 +2279,180 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // Math constants e.g. Math.PI, Math.E etc.
 	    exp.slice(0, 5) !== 'Math.';
 	}
+
+/***/ },
+/* 36 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/23.
+	 */
+	
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _maruo = __webpack_require__(32);
+	
+	var _maruo2 = _interopRequireDefault(_maruo);
+	
+	var _util = __webpack_require__(7);
+	
+	var directives = _maruo2['default'].directives;
+	var eventMap = _util.oneObject('animationend,blur,change,input,click,dblclick,focus,keydown,keypress,' + 'keyup,mousedown,mouseenter,mouseleave,mousemove,mouseout,mouseover,mouseup,scan,scroll,submit');
+	var rbinding = /^m-(\w+)-?(.*)/;
+	
+	function extractBinds(cur, props) {
+	    var bindings = [];
+	    var skip = ('m-skip' in props);
+	    var uniqSave = {};
+	
+	    for (var i in props) {
+	        var val = props[i],
+	            match;
+	        if (!skip && (match = i.match(rbinding))) {
+	            var type = match[1];
+	            var param = match[2] || '';
+	            var name = i;
+	            if (eventMap[type]) {
+	                var order = parseFloat(param) || 0;
+	                param = type;
+	                type = 'on';
+	            }
+	            name = 'm-' + type + (param ? '-' + param : '');
+	            if (i !== name) {
+	                delete props[i];
+	                props[name] = val;
+	            }
+	            if (directives[type]) {
+	                var binding = {
+	                    type: type,
+	                    param: param,
+	                    name: name,
+	                    expr: val,
+	                    priority: directives[type].priority || type.charCodeAt(0) * 100
+	                };
+	                if (type === 'on') {
+	                    order = order || 0;
+	                    binding.name += '-' + order; //绑定多次事件
+	                    binding.priority = param.charCodeAt(0) * 100 + order;
+	                }
+	                if (!uniqSave[binding.name]) {
+	                    uniqSave[binding.name] = 1;
+	                    bindings.push(binding);
+	                }
+	            }
+	        } else {
+	            cur.props[i] = props[i];
+	        }
+	    }
+	    bindings.sort(byPriority);
+	    return bindings;
+	}
+	
+	function byPriority(a, b) {
+	    return a.priority - b.priority;
+	}
+	
+	exports['default'] = extractBinds;
+	module.exports = exports['default'];
+
+/***/ },
+/* 37 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/23.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	exports['default'] = mixinDirectives;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _text = __webpack_require__(38);
+	
+	var _text2 = _interopRequireDefault(_text);
+	
+	function mixinDirectives(maruo) {
+	  maruo.directive('text', _text2['default']);
+	}
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 38 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/23.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	var _vdom = __webpack_require__(23);
+	
+	var _compilerParseExpr = __webpack_require__(35);
+	
+	exports['default'] = {
+	    parse: function parse(cur, src, binding, scope) {
+	        cur[binding.name] = 1;
+	        src.children = [];
+	        cur.children = [];
+	        cur.children.push(new _vdom.VText({
+	            nodeType: 3,
+	            type: '#text',
+	            dynamic: true,
+	            nodeValue: _compilerParseExpr.parseExpr(binding.expr).getter(scope)
+	        }));
+	    }
+	};
+	module.exports = exports['default'];
+
+/***/ },
+/* 39 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/23.
+	 */
+	
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _maruo = __webpack_require__(32);
+	
+	var _maruo2 = _interopRequireDefault(_maruo);
+	
+	var needRenderIds = [];
+	var renderingId = false;
+	
+	function batch(id) {
+	    if (renderingId) {
+	        return needRenderIds.ensure(id);
+	    } else {
+	        renderingId = id;
+	    }
+	    var scope = _maruo2['default'].scopes[id];
+	    if (!scope) {
+	        return renderingId = null;
+	    }
+	    var vm = scope.vmodel;
+	    var dom = vm.$el;
+	    var source = dom.vtree || [];
+	    var copy = vm.$render(vm);
+	    if (scope.isTemp) {}
+	}
+	
+	exports['default'] = batch;
+	module.exports = exports['default'];
 
 /***/ }
 /******/ ])

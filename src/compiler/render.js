@@ -6,6 +6,7 @@ import { unescapeHTML, commonTmpDiv } from '../util'
 import { VElement, VText, VComment } from  '../vdom'
 import { parseExpr } from './parseExpr'
 import maruo from '../maruo'
+import extractBinding from './extractBinding'
 
 
 const rlineSp = /\n\s*/g
@@ -16,22 +17,26 @@ const rentities = /&[a-z0-9#]{2,10};/
  */
 export function render(vtree) {
     vtree = Array.isArray(vtree) ? vtree : [vtree]
-    return function (vm) {
-        var vnodes = []
-        var vnode
-        for (var i =0, el; el = vtree[i++];) {
-            vnode = parseNode(el, vm)
-            vnodes.push(vnode)
-        }
-        return vnodes
+    return function (scope) {
+        scope = scope || this
+        return parseNodes(vtree, scope)
     }
 }
 
-function parseNode(vdom) {
+function parseNodes(vtree, scope) {
+    var vnodes = []
+    var vnode
+    for (var i =0, el; el = vtree[i++];) {
+        vnode = parseNode(el, scope)
+        vnodes.push(vnode)
+    }
+    return vnodes
+}
 
+function parseNode(vdom, scope) {
     switch (vdom.nodeType) {
         case 3:
-            return parseText(vdom)
+            return parseText(vdom, scope)
         case 8:
             return vdom
         case 1:
@@ -40,7 +45,29 @@ function parseNode(vdom) {
                 type: vdom.type,
                 nodeType: 1
             }
-            return vdom
+            var bindings = extractBinding(copy, vdom.props)
+            bindings.forEach(function (binding) {
+                maruo.directives[binding.type].parse(copy, vdom, binding,scope)
+            })
+            if (vdom.isVoidTag) {
+               copy.isVoidTag = true
+            } else {
+                if (!('children' in copy)) { // directive或许或许会赋值给copy children属性
+                    var children = vdom.children
+                    if (children.length) {
+                        copy.children = parseNodes(children, scope)
+                    }else {
+                        copy.children = []
+                    }
+                }
+            }
+
+            if (vdom.skipContent)
+                copy.skipContent = true
+            if (vdom.skipAttrs)
+                copy.skipAttrs = true
+
+            return new VElement(copy)
             
         default:
             if (Array.isArray(vdom)) {
@@ -49,14 +76,13 @@ function parseNode(vdom) {
     }
 }
 
-function parseText(vtext, vm) {
+function parseText(vtext, scope) {
     var array = extractExpr(vtext.nodeValue)//返回一个数组
     var nodeValue = array.map(function (part) {
         if (!part.expr){
             return part.value
         }
-        var scope = vm
-        return parseExpr(str, false).getter()
+        return parseExpr(part.value, false).getter(scope)
     }).join('');
     return new VText({
         type: '#text',
