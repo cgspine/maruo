@@ -25,5 +25,8 @@ VComment.prototype = {
     },
     toHTML: function () {
         return `<!-- ${this.nodeValue} -->`
+    },
+    generate: function(vm){
+        return this
     }
 }

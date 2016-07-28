@@ -28,7 +28,7 @@ function scan(els,maruo) {
                handleDirectives(el.vtree)
                var now2 = new Date()
                config.debug && log(`构建虚拟DOM耗时${now2 - now}ms`)
-               vm.$render = render(el.vtree)
+               vm.$render = render(el.vtree, vm)
                maruo.scopes[vm.$id] = {
                    vmodel: vm,
                    isTemp: true
@@ -36,7 +36,7 @@ function scan(els,maruo) {
                var now3 = new Date()
                config.debug && log(`构建当前vm的$render方法用时${now3 - now2}ms`)
                batch($id)
-               el.outerHTML = vm.$render(vm).map(function (item) {
+               el.outerHTML = vm.$render().map(function (item) {
                    return item.toHTML()
                }).join('')
            } else if (!$id) {

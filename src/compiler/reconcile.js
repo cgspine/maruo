@@ -38,15 +38,15 @@ function reconcile(nodes, vnodes, parent) {
                     //在chrome与firefox下删掉select中的空白节点，会影响到selectedIndex
                     var fixedIndex = el.selectedIndex
                 }
-                reconcile(el.childNodes, vnodes.children, el)
+                reconcile(el.childNodes, vnode.children, el)
                 if(el.type === 'select-one') {
                     el.selectedIndex = fixedIndex
                 }
             }
         }else{
             change = true
-            if(map[v] === '8true') {
-                var vv = vnodes[v]
+            if(map[nl] === '8true') {
+                var vv = vnodes[nl]
                 var comment = document.createComment(vv.nodeValue)
                 vv.dom = comment
                 newNodes.push(comment)

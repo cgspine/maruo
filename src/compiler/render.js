@@ -15,81 +15,38 @@ const rentities = /&[a-z0-9#]{2,10};/
 /**
  * 将虚拟DOM树转换为一个$render方法
  */
-export function render(vtree) {
+export function render(vtree, vm) {
     vtree = Array.isArray(vtree) ? vtree : [vtree]
-    return function (scope) {
-        scope = scope || this
-        return parseNodes(vtree, scope)
+    parseNodes(vtree, vm)
+    return function () {
+        var vnodes = []
+        for (var i=0, el; el =vtree[i++];) {
+            vnodes.push(el.generate(vm))
+        }
+        return vnodes
     }
 }
 
-function parseNodes(vtree, scope) {
-    var vnodes = []
-    var vnode
+function parseNodes(vtree) {
     for (var i =0, el; el = vtree[i++];) {
-        vnode = parseNode(el, scope)
-        vnodes.push(vnode)
+        parseNode(el)
     }
-    return vnodes
 }
 
-function parseNode(vdom, scope) {
+function parseNode(vdom) {
     switch (vdom.nodeType) {
         case 3:
-            return parseText(vdom, scope)
+            vdom.expression = extractExpr(vdom.nodeValue)
+            break
         case 8:
-            return vdom
+            break
         case 1:
-            var copy = {
-                props: {},
-                type: vdom.type,
-                nodeType: 1
+            vdom.bindings = extractBinding(vdom.copyProto, vdom.props)
+            if(!vdom.isVoidTag){
+                parseNodes(vdom.children)
             }
-            var bindings = extractBinding(copy, vdom.props)
-            bindings.forEach(function (binding) {
-                maruo.directives[binding.type].parse(copy, vdom, binding,scope)
-            })
-            if (vdom.isVoidTag) {
-               copy.isVoidTag = true
-            } else {
-                if (!('children' in copy)) { // directive或许或许会赋值给copy children属性
-                    var children = vdom.children
-                    if (children.length) {
-                        copy.children = parseNodes(children, scope)
-                    }else {
-                        copy.children = []
-                    }
-                }
-            }
-
-            if (vdom.skipContent)
-                copy.skipContent = true
-            if (vdom.skipAttrs)
-                copy.skipAttrs = true
-
-            return new VElement(copy)
-            
-        default:
-            if (Array.isArray(vdom)) {
-
-            }
+            break
     }
-}
-
-function parseText(vtext, scope) {
-    var array = extractExpr(vtext.nodeValue)//返回一个数组
-    var nodeValue = array.map(function (part) {
-        if (!part.expr){
-            return part.value
-        }
-        return parseExpr(part.value, false).getter(scope)
-    }).join('');
-    return new VText({
-        type: '#text',
-        nodeType: 3,
-        dynamic: true,
-        nodeValue: nodeValue
-    })
 }
 
 /**

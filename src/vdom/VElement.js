@@ -3,6 +3,7 @@
  */
 
 import browser from '../dom/browser'
+import maruo from '../maruo'
 
 export function VElement(type, props, children) {
     if (typeof type === 'object') {
@@ -16,6 +17,12 @@ export function VElement(type, props, children) {
         this.children = children
         this.template = ''
         this.isVoidTag = false
+    }
+    this.bindings = []
+    this.copyProto = {
+        props: {},
+        type: this.type,
+        nodeType: 1
     }
 }
 
@@ -85,5 +92,36 @@ VElement.prototype = {
             str += this.template || ''
         }
         return str + '</' + this.type + '>'
+    },
+    generate: function(vm){
+        var copy = {}
+        maruo.shadowCopy(copy, this.copyProto)
+        var bindings = this.bindings || []
+        var self = this
+        bindings.forEach(function(binding){
+            maruo.directives[binding.type].parse(copy, self, binding, vm)
+        })
+
+        if (this.isVoidTag) {
+            copy.isVoidTag = true
+        } else {
+            if (!('children' in copy)) { // directive或许或许会赋值给copy children属性
+                var children = this.children
+                if (children.length) {
+                    copy.children = children.map(function(el){
+                        return el.generate(vm)
+                    })
+                }else {
+                    copy.children = []
+                }
+            }
+        }
+
+        if (this.skipContent)
+            copy.skipContent = true
+        if (this.skipAttrs)
+            copy.skipAttrs = true
+
+        return new VElement(copy)
     }
 }
