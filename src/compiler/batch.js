@@ -23,7 +23,7 @@ function batch(id) {
     var vm = scope.vmodel
     var dom = vm.$el
     var source = dom.vtree || []
-    var copy = vm.$render(vm)
+    var copy = vm.$render()
     if (scope.isTemp) {
         //在最开始时,替换作用域的所有节点,确保虚拟DOM与真实DOM是对齐的
         reconcile([dom], source, dom.parentNode)

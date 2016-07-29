@@ -1438,7 +1438,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                vm.$el = el;
 	                var now = new Date();
 	                el.vtree = _compilerLexer.lexer(el.outerHTML);
-	                _compilerLexer.handleDirectives(el.vtree);
+	                _compilerLexer.optimizate(el.vtree);
 	                var now2 = new Date();
 	                _config2['default'].debug && _util.log('构建虚拟DOM耗时' + (now2 - now) + 'ms');
 	                vm.$render = _compilerRender.render(el.vtree, vm);
@@ -1449,9 +1449,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                var now3 = new Date();
 	                _config2['default'].debug && _util.log('构建当前vm的$render方法用时' + (now3 - now2) + 'ms');
 	                _compilerBatch2['default']($id);
-	                el.outerHTML = vm.$render().map(function (item) {
-	                    return item.toHTML();
-	                }).join('');
 	            } else if (!$id) {
 	                scan(el.childNodes, maruo);
 	            }
@@ -1525,7 +1522,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	exports.__esModule = true;
 	exports.lexer = lexer;
-	exports.handleDirectives = handleDirectives;
+	exports.optimizate = optimizate;
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
@@ -1633,11 +1630,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                case 'noscript':
 	                                case 'template':
 	                                    node.skipContent = true;
-	                                    node.children.push({
+	                                    node.children.push(new _vdom.VText({
 	                                        type: '#text',
 	                                        nodeType: 3,
 	                                        nodeValue: _util.unescapeHTML(innerHTML)
-	                                    });
+	                                    }));
 	                                    break;
 	                                case 'textarea':
 	                                    node.skipContent = true;
@@ -1691,7 +1688,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * 对input/textarea元素补上type属性
 	 * ms-*自定义元素补上ms-widget属性
 	 * 对table元素补上tbody
-	 * 在ms-for指令的元素两旁加上 <!--ms-for-->,<!--ms-for-end-->占位符, 并将它们的之间的元素放到一个数组中(表明它们是循环区域)
 	 * 去掉所有只有空白的文本节点
 	 */
 	function fireFinishCollect(node, stack, ret) {
@@ -1793,7 +1789,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * 如果它的子孙没有m-*或插值表达式或m-自定义元素,那么还加上skipContent，表明以后不要遍历其孩子
 	 */
 	
-	function handleDirectives(arr) {
+	function optimizate(arr) {
 	    for (var i = 0; i < arr.length; i++) {
 	        hasDirective(arr[i]);
 	    }
@@ -2395,7 +2391,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var vm = scope.vmodel;
 	        var dom = vm.$el;
 	        var source = dom.vtree || [];
-	        var copy = vm.$render(vm);
+	        var copy = vm.$render();
 	        if (scope.isTemp) {
 	            //在最开始时,替换作用域的所有节点,确保虚拟DOM与真实DOM是对齐的
 	            _reconcile2['default']([dom], source, dom.parentNode);
@@ -2558,6 +2554,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _maruo2 = _interopRequireDefault(_maruo);
 	
+	var emptyArr = [];
 	var emptyObj = function emptyObj() {
 	    return {
 	        children: [], props: {}
@@ -2580,7 +2577,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	            case 8:
 	                break;
 	            case 1:
-	
+	                if (!copy.skipContent && !copy.isVoidTag) {
+	                    src.bindings.forEach(function (binding) {
+	                        directives[binding.type].diff(copy, src);
+	                    });
+	                    diff(copy.children, src.children || emptyArr, copy);
+	                }
 	        }
 	    }
 	}
@@ -2595,6 +2597,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	/**
 	 * Created by cgspine on 16/7/23.
 	 */
+	
 	'use strict';
 	
 	exports.__esModule = true;
@@ -2602,11 +2605,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
+	var _expr = __webpack_require__(36);
+	
+	var _expr2 = _interopRequireDefault(_expr);
+	
 	var _text = __webpack_require__(33);
 	
 	var _text2 = _interopRequireDefault(_text);
 	
 	function mixinDirectives(maruo) {
+	  maruo.directive('expr', _expr2['default']);
 	  maruo.directive('text', _text2['default']);
 	}
 	
@@ -2629,7 +2637,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	exports['default'] = {
 	    parse: function parse(cur, src, binding, scope) {
-	        cur[binding.name] = 1;
 	        src.children = [];
 	        cur.children = [];
 	        cur.children.push(new _vdom.VText({
@@ -2638,6 +2645,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	            dynamic: true,
 	            nodeValue: _compilerParseExpr.parseExpr(binding.expr).getter(scope)
 	        }));
+	    },
+	
+	    diff: function diff(copy, src) {
+	        if (!src.children.length) {
+	            var dom = src.dom;
+	            if (dom && !src.isVoidTag) {
+	                while (dom.firstChild) {
+	                    dom.removeChild(dom.firstChild);
+	                }
+	                var text = document.createTextNode('x');
+	                dom.appendChild(text);
+	                var a = { nodeType: 3, type: '#text', dom: text };
+	                src.children.push(new _vdom.VText(a));
+	            }
+	        }
 	    }
 	};
 	module.exports = exports['default'];
@@ -2675,6 +2697,41 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.push(el);
 	    }
 	};
+
+/***/ },
+/* 36 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/24.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _util = __webpack_require__(7);
+	
+	var _config = __webpack_require__(6);
+	
+	var _config2 = _interopRequireDefault(_config);
+	
+	exports['default'] = {
+	    parse: _util.noop,
+	    diff: function diff(copy, src) {
+	        var copyValue = copy.nodeValue + '';
+	        if (copyValue !== src.nodeValue) {
+	            var dom = src.dom;
+	            if (dom) {
+	                dom.nodeValue = copyValue;
+	            } else {
+	                _config2['default'].debug && _util.warn('找不到[' + copy.nodeValue + ']对应的节点');
+	            }
+	        }
+	    }
+	};
+	module.exports = exports['default'];
 
 /***/ }
 /******/ ])

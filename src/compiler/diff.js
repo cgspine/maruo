@@ -4,6 +4,7 @@
 
 import maruo from '../maruo'
 
+var emptyArr = []
 var emptyObj = function () {
     return {
         children: [], props: {}
@@ -26,7 +27,12 @@ function diff(copys, sources) {
             case 8:
                 break
             case 1:
-                
+                if (!copy.skipContent && !copy.isVoidTag ) {
+                    src.bindings.forEach(function(binding){
+                        directives[binding.type].diff(copy,src)
+                    })
+                    diff(copy.children, src.children || emptyArr, copy)
+                }
         }
     }
 }

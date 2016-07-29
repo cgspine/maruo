@@ -2,6 +2,7 @@
  * Created by cgspine on 16/7/24.
  */
 import { noop, warn } from '../util'
+import config from '../config'
 
 export default {
     parse: noop,
@@ -12,7 +13,7 @@ export default {
             if(dom){
                 dom.nodeValue = copyValue
             } else {
-               warn(`找不到[${copy.nodeValue}]对应的节点`)
+               config.debug && warn(`找不到[${copy.nodeValue}]对应的节点`)
             }
         }
     }

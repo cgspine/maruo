@@ -66,7 +66,7 @@ export function lexer(str) {
 
         // element
         if (!node) {
-            var match = str. match(ropenTag)
+            var match = str.match(ropenTag)
             if (match) {
                 var type = match[1].toLowerCase()
                 var isVoidTag = voidTag[type] || match[3] == '\/'
@@ -105,11 +105,11 @@ export function lexer(str) {
                                 case 'noscript':
                                 case 'template':
                                     node.skipContent = true
-                                    node.children.push({
+                                    node.children.push(new VText({
                                         type: '#text',
                                         nodeType: 3,
                                         nodeValue: unescapeHTML(innerHTML)
-                                    })
+                                    }))
                                     break
                                 case 'textarea':
                                     node.skipContent = true
@@ -164,7 +164,6 @@ export function lexer(str) {
  * 对input/textarea元素补上type属性
  * ms-*自定义元素补上ms-widget属性
  * 对table元素补上tbody
- * 在ms-for指令的元素两旁加上 <!--ms-for-->,<!--ms-for-end-->占位符, 并将它们的之间的元素放到一个数组中(表明它们是循环区域)
  * 去掉所有只有空白的文本节点
  */
 function fireFinishCollect(node, stack, ret) {
@@ -261,7 +260,7 @@ function collectProps(attrs, props) {
  * 对没有m-*属性的元素添加skipAttrs属性,表明以后不需要遍历其属性
  * 如果它的子孙没有m-*或插值表达式或m-自定义元素,那么还加上skipContent，表明以后不要遍历其孩子
  */
-export function handleDirectives(arr) {
+export function optimizate(arr) {
     for (var i = 0; i < arr.length; i++) {
         hasDirective(arr[i])
     }

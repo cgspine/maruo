@@ -6,7 +6,6 @@ import { parseExpr } from '../compiler/parseExpr'
 
 export default {
     parse: function (cur, src, binding,scope) {
-        cur[binding.name] = 1
         src.children = []
         cur.children = []
         cur.children.push(new VText({
@@ -15,5 +14,20 @@ export default {
             dynamic: true,
             nodeValue: parseExpr(binding.expr).getter(scope)
         }))
+    },
+
+    diff: function(copy, src){
+        if(!src.children.length){
+            var dom = src.dom
+            if (dom && !src.isVoidTag ) {
+                while (dom.firstChild) {
+                    dom.removeChild(dom.firstChild)
+                }
+                var text = document.createTextNode('x')
+                dom.appendChild(text)
+                var a = {nodeType: 3, type:'#text', dom: text}
+                src.children.push(new VText(a))
+            }
+        }
     }
 }
