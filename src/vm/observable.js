@@ -6,6 +6,7 @@ import { toJson } from  '../util/data'
 import { makeHashCode,hideProperty } from  '../util/index'
 import { arrayMethods } from  './array'
 import { oneObject } from '../util/index'
+import batch from '../compiler/batch'
 
 const arrayKeys = Object.getOwnPropertyNames(arrayMethods)
 
@@ -157,6 +158,7 @@ Observable.prototype.makePropAccessor = function (key) {
    var root = this.root
    var sid = this.$id + '.' + 'key'
    var spath = this.spath.length>0 ? this.spath + '.' + key : key
+   var self = this 
    Object.defineProperty(this.__data__, key,{
        get: function () {
            return val.__data__ || val
@@ -176,11 +178,22 @@ Observable.prototype.makePropAccessor = function (key) {
            }else{
                root.$emit(spath, val, newValue)
            }
+           self.batchUpdateView()
            val = newValue
        },
        enumerable: true,
        configurable: true
    })
+}
+
+Observable.prototype.batchUpdateView = function () {
+    var id = this.$id
+    var dotIndex = id.indexOf('.')
+    if (dotIndex > 0) {
+        batch(id.slice(0,dotIndex))
+    } else {
+        batch(id)
+    }
 }
 
 /**

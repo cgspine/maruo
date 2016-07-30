@@ -3,6 +3,7 @@
  */
 
 import maruo from '../maruo'
+import { rword } from '../util'
 
 var emptyArr = []
 var emptyObj = function () {
@@ -27,14 +28,23 @@ function diff(copys, sources) {
             case 8:
                 break
             case 1:
+                diffElementBindings(copy, src)
+                
                 if (!copy.skipContent && !copy.isVoidTag ) {
-                    src.bindings.forEach(function(binding){
-                        directives[binding.type].diff(copy,src)
-                    })
                     diff(copy.children, src.children || emptyArr, copy)
                 }
         }
     }
+}
+
+function diffElementBindings(copy, src) {
+    var bindings = src.bindings
+    if(bindings){
+        bindings.forEach(function(binding){
+            directives[binding.type].diff(copy,src, binding.name)
+        })
+    }
+    
 }
 
 export default diff

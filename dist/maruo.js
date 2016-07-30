@@ -972,11 +972,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.__esModule = true;
 	exports.Observable = Observable;
 	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
 	var _utilData = __webpack_require__(9);
 	
 	var _utilIndex = __webpack_require__(7);
 	
 	var _array = __webpack_require__(16);
+	
+	var _compilerBatch = __webpack_require__(29);
+	
+	var _compilerBatch2 = _interopRequireDefault(_compilerBatch);
 	
 	var arrayKeys = Object.getOwnPropertyNames(_array.arrayMethods);
 	
@@ -1126,6 +1132,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var root = this.root;
 	    var sid = this.$id + '.' + 'key';
 	    var spath = this.spath.length > 0 ? this.spath + '.' + key : key;
+	    var self = this;
 	    Object.defineProperty(this.__data__, key, {
 	        get: function get() {
 	            return val.__data__ || val;
@@ -1145,11 +1152,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	            } else {
 	                root.$emit(spath, val, newValue);
 	            }
+	            self.batchUpdateView();
 	            val = newValue;
 	        },
 	        enumerable: true,
 	        configurable: true
 	    });
+	};
+	
+	Observable.prototype.batchUpdateView = function () {
+	    var id = this.$id;
+	    var dotIndex = id.indexOf('.');
+	    if (dotIndex > 0) {
+	        _compilerBatch2['default'](id.slice(0, dotIndex));
+	    } else {
+	        _compilerBatch2['default'](id);
+	    }
 	};
 	
 	/**
@@ -2554,6 +2572,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _maruo2 = _interopRequireDefault(_maruo);
 	
+	var _util = __webpack_require__(7);
+	
 	var emptyArr = [];
 	var emptyObj = function emptyObj() {
 	    return {
@@ -2577,13 +2597,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	            case 8:
 	                break;
 	            case 1:
+	                diffElementBindings(copy, src);
+	
 	                if (!copy.skipContent && !copy.isVoidTag) {
-	                    src.bindings.forEach(function (binding) {
-	                        directives[binding.type].diff(copy, src);
-	                    });
 	                    diff(copy.children, src.children || emptyArr, copy);
 	                }
 	        }
+	    }
+	}
+	
+	function diffElementBindings(copy, src) {
+	    var bindings = src.bindings;
+	    if (bindings) {
+	        bindings.forEach(function (binding) {
+	            directives[binding.type].diff(copy, src, binding.name);
+	        });
 	    }
 	}
 	
@@ -2613,9 +2641,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _text2 = _interopRequireDefault(_text);
 	
+	var _controller = __webpack_require__(37);
+	
+	var _controller2 = _interopRequireDefault(_controller);
+	
 	function mixinDirectives(maruo) {
-	  maruo.directive('expr', _expr2['default']);
-	  maruo.directive('text', _text2['default']);
+	    maruo.directive('expr', _expr2['default']);
+	    maruo.directive('text', _text2['default']);
+	    maruo.directive('controller', _controller2['default']);
 	}
 	
 	module.exports = exports['default'];
@@ -2729,6 +2762,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	                _config2['default'].debug && _util.warn('找不到[' + copy.nodeValue + ']对应的节点');
 	            }
 	        }
+	    }
+	};
+	module.exports = exports['default'];
+
+/***/ },
+/* 37 */
+/***/ function(module, exports) {
+
+	/**
+	 * Created by cgspine on 16/7/30.
+	 */
+	
+	'use strict';
+	
+	exports.__esModule = true;
+	exports['default'] = {
+	    parse: function parse(cur, src, binding, scope) {},
+	
+	    diff: function diff(copy, src, name) {
+	        console.log('haha');
 	    }
 	};
 	module.exports = exports['default'];

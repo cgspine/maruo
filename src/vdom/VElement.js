@@ -101,6 +101,7 @@ VElement.prototype = {
         bindings.forEach(function(binding){
             maruo.directives[binding.type].parse(copy, self, binding, vm)
         })
+        
 
         if (this.isVoidTag) {
             copy.isVoidTag = true
