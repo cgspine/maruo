@@ -76,11 +76,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _vm2 = _interopRequireDefault(_vm);
 	
-	var _event = __webpack_require__(17);
+	var _event = __webpack_require__(20);
 	
 	var _event2 = _interopRequireDefault(_event);
 	
-	var _dom = __webpack_require__(18);
+	var _dom = __webpack_require__(21);
 	
 	var _dom2 = _interopRequireDefault(_dom);
 	
@@ -88,7 +88,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _directives2 = _interopRequireDefault(_directives);
 	
-	__webpack_require__(34);
+	__webpack_require__(36);
 	
 	_core2['default'](_maruo2['default']);
 	_vm2['default'](_maruo2['default']);
@@ -980,7 +980,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _array = __webpack_require__(16);
 	
-	var _compilerBatch = __webpack_require__(29);
+	var _compilerBatch = __webpack_require__(17);
 	
 	var _compilerBatch2 = _interopRequireDefault(_compilerBatch);
 	
@@ -1152,8 +1152,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	            } else {
 	                root.$emit(spath, val, newValue);
 	            }
-	            self.batchUpdateView();
 	            val = newValue;
+	            self.batchUpdateView();
 	        },
 	        enumerable: true,
 	        configurable: true
@@ -1309,6 +1309,265 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/23.
+	 */
+	
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _maruo = __webpack_require__(1);
+	
+	var _maruo2 = _interopRequireDefault(_maruo);
+	
+	var _reconcile = __webpack_require__(18);
+	
+	var _reconcile2 = _interopRequireDefault(_reconcile);
+	
+	var _domBrowser = __webpack_require__(13);
+	
+	var _domBrowser2 = _interopRequireDefault(_domBrowser);
+	
+	var _diff = __webpack_require__(19);
+	
+	var _diff2 = _interopRequireDefault(_diff);
+	
+	var needRenderIds = [];
+	var renderingId = false;
+	
+	function batch(_x) {
+	    var _again = true;
+	
+	    _function: while (_again) {
+	        var id = _x;
+	        _again = false;
+	
+	        if (renderingId) {
+	            return needRenderIds.ensure(id);
+	        } else {
+	            renderingId = id;
+	        }
+	        var scope = _maruo2['default'].scopes[id];
+	        if (!scope || !_domBrowser2['default'].document.nodeName) {
+	            return renderingId = null;
+	        }
+	        var vm = scope.vmodel;
+	        var dom = vm.$el;
+	        var source = dom.vtree || [];
+	        var copy = vm.$render();
+	        if (scope.isTemp) {
+	            //在最开始时,替换作用域的所有节点,确保虚拟DOM与真实DOM是对齐的
+	            _reconcile2['default']([dom], source, dom.parentNode);
+	            delete _maruo2['default'].scopes[id];
+	        }
+	
+	        _diff2['default'](copy, source);
+	
+	        var index = needRenderIds.indexOf(renderingId);
+	        renderingId = 0;
+	        if (index > -1) {
+	            var removed = needRenderIds.splice(index, 1);
+	            _x = removed[0];
+	            _again = true;
+	            scope = vm = dom = source = copy = index = removed = undefined;
+	            continue _function;
+	        }
+	
+	        var more = needRenderIds.shift();
+	        if (more) {
+	            batch(more);
+	        }
+	    }
+	}
+	
+	exports['default'] = batch;
+	module.exports = exports['default'];
+
+/***/ },
+/* 18 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/24.
+	 * 节点对齐算法
+	 */
+	
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _util = __webpack_require__(7);
+	
+	var _domBrowser = __webpack_require__(13);
+	
+	var _domBrowser2 = _interopRequireDefault(_domBrowser);
+	
+	var rforHolder = /^m\-for/;
+	var rwhiteRetain = /[\S\xA0]/;
+	var plainTag = _util.oneObject('script,style,template,noscript,textarea');
+	
+	function reconcile(nodes, vnodes, parent) {
+	    vnodes = flatten(vnodes);
+	    var vl = vnodes.length;
+	    if (vl === 0) {
+	        return;
+	    }
+	    var map = {};
+	    vnodes.forEach(function (el, index) {
+	        map[index] = getType(el);
+	    });
+	    var newNodes = [],
+	        change = false,
+	        el,
+	        i = 0;
+	    while (true) {
+	        el = nodes[i++];
+	        var vtype = el && getType(el);
+	        var nl = newNodes.length;
+	        if (map[nl] === vtype) {
+	            newNodes.push(el);
+	            var vnode = vnodes[nl];
+	
+	            if (vnode.dynamic) {
+	                vnode.dom = el;
+	            }
+	
+	            if (el.nodeType === 1 && !vnode.isVoidTag && !plainTag[vnode.type]) {
+	                if (el.type === 'select-one') {
+	                    //在chrome与firefox下删掉select中的空白节点，会影响到selectedIndex
+	                    var fixedIndex = el.selectedIndex;
+	                }
+	                reconcile(el.childNodes, vnode.children, el);
+	                if (el.type === 'select-one') {
+	                    el.selectedIndex = fixedIndex;
+	                }
+	            }
+	        } else {
+	            change = true;
+	            if (map[nl] === '8true') {
+	                var vv = vnodes[nl];
+	                var comment = document.createComment(vv.nodeValue);
+	                vv.dom = comment;
+	                newNodes.push(comment);
+	                // comment是在lexer的时候被插进来的?
+	                i = Math.max(0, --i);
+	            }
+	        }
+	        if (newNodes.length === vl) {
+	            break;
+	        }
+	    }
+	
+	    if (change) {
+	        var f = _domBrowser2['default'].document.createDocumentFragment(),
+	            i = 0;
+	        while (el = newNodes[i++]) {
+	            f.appendChild(el);
+	        }
+	        while (el = parent.firstChild) {
+	            parent.removeChild(el);
+	        }
+	        parent.appendChild(f);
+	    }
+	}
+	
+	function flatten(nodes) {
+	    var arr = [];
+	    for (var i = 0, el; el = nodes[i]; i++) {
+	        if (Array.isArray(el)) {
+	            arr = arr.concat(flatten(el));
+	        } else {
+	            arr.push(el);
+	        }
+	    }
+	    return arr;
+	}
+	
+	function getType(node) {
+	    switch (node.nodeType) {
+	        case 3:
+	            return '3' + rwhiteRetain.test(node.nodeValue);
+	        case 1:
+	            return '1' + (node.nodeName || node.type).toLowerCase();
+	        case 8:
+	            return '8' + rforHolder.test(node.nodeValue);
+	    }
+	}
+	
+	exports['default'] = reconcile;
+	module.exports = exports['default'];
+
+/***/ },
+/* 19 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/23.
+	 */
+	
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _maruo = __webpack_require__(1);
+	
+	var _maruo2 = _interopRequireDefault(_maruo);
+	
+	var emptyArr = [];
+	var emptyObj = function emptyObj() {
+	    return {
+	        children: [], props: {}
+	    };
+	};
+	
+	var directives = _maruo2['default'].directives;
+	
+	function diff(copys, sources) {
+	    for (var i = 0; i < copys.length; i++) {
+	        var copy = copys[i];
+	        var src = sources[i] || emptyObj();
+	
+	        switch (copy.nodeType) {
+	            case 3:
+	                if (copy.dynamic) {
+	                    directives['expr'].diff(copy, src);
+	                }
+	                break;
+	            case 8:
+	                break;
+	            case 1:
+	                diffElementBindings(copy, src);
+	
+	                if (!copy.skipContent && !copy.isVoidTag) {
+	                    diff(copy.children, src.children || emptyArr, copy);
+	                }
+	        }
+	    }
+	}
+	
+	function diffElementBindings(copy, src) {
+	    var bindings = src.bindings;
+	    if (bindings) {
+	        bindings.forEach(function (binding) {
+	            directives[binding.type].diff(copy, src, binding.name);
+	        });
+	    }
+	}
+	
+	exports['default'] = diff;
+	module.exports = exports['default'];
+
+/***/ },
+/* 20 */
 /***/ function(module, exports) {
 
 	/**
@@ -1329,7 +1588,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports["default"];
 
 /***/ },
-/* 18 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -1342,11 +1601,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _ready = __webpack_require__(19);
+	var _ready = __webpack_require__(22);
 	
 	var _ready2 = _interopRequireDefault(_ready);
 	
-	var _scan = __webpack_require__(20);
+	var _scan = __webpack_require__(23);
 	
 	var _scan2 = _interopRequireDefault(_scan);
 	
@@ -1360,7 +1619,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 19 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -1409,7 +1668,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 20 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -1421,17 +1680,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _class = __webpack_require__(21);
+	var _class = __webpack_require__(24);
 	
 	var _class2 = _interopRequireDefault(_class);
 	
 	var _util = __webpack_require__(7);
 	
-	var _compilerLexer = __webpack_require__(22);
+	var _compilerLexer = __webpack_require__(25);
 	
-	var _compilerRender = __webpack_require__(27);
+	var _compilerRender = __webpack_require__(30);
 	
-	var _compilerBatch = __webpack_require__(29);
+	var _compilerBatch = __webpack_require__(17);
 	
 	var _compilerBatch2 = _interopRequireDefault(_compilerBatch);
 	
@@ -1485,7 +1744,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 21 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -1527,7 +1786,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 22 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -1544,7 +1803,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _vdom = __webpack_require__(23);
+	var _vdom = __webpack_require__(26);
 	
 	var _util = __webpack_require__(7);
 	
@@ -1879,7 +2138,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 23 */
+/* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -1894,20 +2153,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
 	
-	var _VElement = __webpack_require__(24);
+	var _VElement = __webpack_require__(27);
 	
 	_defaults(exports, _interopExportWildcard(_VElement, _defaults));
 	
-	var _VComment = __webpack_require__(25);
+	var _VComment = __webpack_require__(28);
 	
 	_defaults(exports, _interopExportWildcard(_VComment, _defaults));
 	
-	var _VText = __webpack_require__(26);
+	var _VText = __webpack_require__(29);
 	
 	_defaults(exports, _interopExportWildcard(_VText, _defaults));
 
 /***/ },
-/* 24 */
+/* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -2049,7 +2308,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 25 */
+/* 28 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -2095,7 +2354,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 26 */
+/* 29 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -2163,7 +2422,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 27 */
+/* 30 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -2182,7 +2441,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _util = __webpack_require__(7);
 	
-	var _vdom = __webpack_require__(23);
+	var _vdom = __webpack_require__(26);
 	
 	var _parseExpr = __webpack_require__(4);
 	
@@ -2190,7 +2449,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _maruo2 = _interopRequireDefault(_maruo);
 	
-	var _extractBinding = __webpack_require__(28);
+	var _extractBinding = __webpack_require__(31);
 	
 	var _extractBinding2 = _interopRequireDefault(_extractBinding);
 	
@@ -2279,7 +2538,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 28 */
+/* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -2358,267 +2617,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 29 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Created by cgspine on 16/7/23.
-	 */
-	
-	'use strict';
-	
-	exports.__esModule = true;
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	var _maruo = __webpack_require__(1);
-	
-	var _maruo2 = _interopRequireDefault(_maruo);
-	
-	var _reconcile = __webpack_require__(30);
-	
-	var _reconcile2 = _interopRequireDefault(_reconcile);
-	
-	var _domBrowser = __webpack_require__(13);
-	
-	var _domBrowser2 = _interopRequireDefault(_domBrowser);
-	
-	var _diff = __webpack_require__(31);
-	
-	var _diff2 = _interopRequireDefault(_diff);
-	
-	var needRenderIds = [];
-	var renderingId = false;
-	
-	function batch(_x) {
-	    var _again = true;
-	
-	    _function: while (_again) {
-	        var id = _x;
-	        _again = false;
-	
-	        if (renderingId) {
-	            return needRenderIds.ensure(id);
-	        } else {
-	            renderingId = id;
-	        }
-	        var scope = _maruo2['default'].scopes[id];
-	        if (!scope || !_domBrowser2['default'].document.nodeName) {
-	            return renderingId = null;
-	        }
-	        var vm = scope.vmodel;
-	        var dom = vm.$el;
-	        var source = dom.vtree || [];
-	        var copy = vm.$render();
-	        if (scope.isTemp) {
-	            //在最开始时,替换作用域的所有节点,确保虚拟DOM与真实DOM是对齐的
-	            _reconcile2['default']([dom], source, dom.parentNode);
-	            delete _maruo2['default'].scopes[id];
-	        }
-	
-	        _diff2['default'](copy, source);
-	
-	        var index = needRenderIds.indexOf(renderingId);
-	        renderingId = 0;
-	        if (index > -1) {
-	            var removed = needRenderIds.splice(index, 1);
-	            _x = removed[0];
-	            _again = true;
-	            scope = vm = dom = source = copy = index = removed = undefined;
-	            continue _function;
-	        }
-	
-	        var more = needRenderIds.shift();
-	        if (more) {
-	            batch(more);
-	        }
-	    }
-	}
-	
-	exports['default'] = batch;
-	module.exports = exports['default'];
-
-/***/ },
-/* 30 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Created by cgspine on 16/7/24.
-	 * 节点对齐算法
-	 */
-	
-	'use strict';
-	
-	exports.__esModule = true;
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	var _util = __webpack_require__(7);
-	
-	var _domBrowser = __webpack_require__(13);
-	
-	var _domBrowser2 = _interopRequireDefault(_domBrowser);
-	
-	var rforHolder = /^m\-for/;
-	var rwhiteRetain = /[\S\xA0]/;
-	var plainTag = _util.oneObject('script,style,template,noscript,textarea');
-	
-	function reconcile(nodes, vnodes, parent) {
-	    vnodes = flatten(vnodes);
-	    var vl = vnodes.length;
-	    if (vl === 0) {
-	        return;
-	    }
-	    var map = {};
-	    vnodes.forEach(function (el, index) {
-	        map[index] = getType(el);
-	    });
-	    var newNodes = [],
-	        change = false,
-	        el,
-	        i = 0;
-	    while (true) {
-	        el = nodes[i++];
-	        var vtype = el && getType(el);
-	        var nl = newNodes.length;
-	        if (map[nl] === vtype) {
-	            newNodes.push(el);
-	            var vnode = vnodes[nl];
-	
-	            if (vnode.dynamic) {
-	                vnode.dom = el;
-	            }
-	
-	            if (el.nodeType === 1 && !vnode.isVoidTag && !plainTag[vnode.type]) {
-	                if (el.type === 'select-one') {
-	                    //在chrome与firefox下删掉select中的空白节点，会影响到selectedIndex
-	                    var fixedIndex = el.selectedIndex;
-	                }
-	                reconcile(el.childNodes, vnode.children, el);
-	                if (el.type === 'select-one') {
-	                    el.selectedIndex = fixedIndex;
-	                }
-	            }
-	        } else {
-	            change = true;
-	            if (map[nl] === '8true') {
-	                var vv = vnodes[nl];
-	                var comment = document.createComment(vv.nodeValue);
-	                vv.dom = comment;
-	                newNodes.push(comment);
-	                // comment是在lexer的时候被插进来的?
-	                i = Math.max(0, --i);
-	            }
-	        }
-	        if (newNodes.length === vl) {
-	            break;
-	        }
-	    }
-	
-	    if (change) {
-	        var f = _domBrowser2['default'].document.createDocumentFragment(),
-	            i = 0;
-	        while (el = newNodes[i++]) {
-	            f.appendChild(el);
-	        }
-	        while (el = parent.firstChild) {
-	            parent.removeChild(el);
-	        }
-	        parent.appendChild(f);
-	    }
-	}
-	
-	function flatten(nodes) {
-	    var arr = [];
-	    for (var i = 0, el; el = nodes[i]; i++) {
-	        if (Array.isArray(el)) {
-	            arr = arr.concat(flatten(el));
-	        } else {
-	            arr.push(el);
-	        }
-	    }
-	    return arr;
-	}
-	
-	function getType(node) {
-	    switch (node.nodeType) {
-	        case 3:
-	            return '3' + rwhiteRetain.test(node.nodeValue);
-	        case 1:
-	            return '1' + (node.nodeName || node.type).toLowerCase();
-	        case 8:
-	            return '8' + rforHolder.test(node.nodeValue);
-	    }
-	}
-	
-	exports['default'] = reconcile;
-	module.exports = exports['default'];
-
-/***/ },
-/* 31 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Created by cgspine on 16/7/23.
-	 */
-	
-	'use strict';
-	
-	exports.__esModule = true;
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	var _maruo = __webpack_require__(1);
-	
-	var _maruo2 = _interopRequireDefault(_maruo);
-	
-	var _util = __webpack_require__(7);
-	
-	var emptyArr = [];
-	var emptyObj = function emptyObj() {
-	    return {
-	        children: [], props: {}
-	    };
-	};
-	
-	var directives = _maruo2['default'].directives;
-	
-	function diff(copys, sources) {
-	    for (var i = 0; i < copys.length; i++) {
-	        var copy = copys[i];
-	        var src = sources[i] || emptyObj();
-	
-	        switch (copy.nodeType) {
-	            case 3:
-	                if (copy.dynamic) {
-	                    directives['expr'].diff(copy, src);
-	                }
-	                break;
-	            case 8:
-	                break;
-	            case 1:
-	                diffElementBindings(copy, src);
-	
-	                if (!copy.skipContent && !copy.isVoidTag) {
-	                    diff(copy.children, src.children || emptyArr, copy);
-	                }
-	        }
-	    }
-	}
-	
-	function diffElementBindings(copy, src) {
-	    var bindings = src.bindings;
-	    if (bindings) {
-	        bindings.forEach(function (binding) {
-	            directives[binding.type].diff(copy, src, binding.name);
-	        });
-	    }
-	}
-	
-	exports['default'] = diff;
-	module.exports = exports['default'];
-
-/***/ },
 /* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -2633,15 +2631,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _expr = __webpack_require__(36);
+	var _expr = __webpack_require__(33);
 	
 	var _expr2 = _interopRequireDefault(_expr);
 	
-	var _text = __webpack_require__(33);
+	var _text = __webpack_require__(34);
 	
 	var _text2 = _interopRequireDefault(_text);
 	
-	var _controller = __webpack_require__(37);
+	var _controller = __webpack_require__(35);
 	
 	var _controller2 = _interopRequireDefault(_controller);
 	
@@ -2655,84 +2653,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 33 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Created by cgspine on 16/7/23.
-	 */
-	'use strict';
-	
-	exports.__esModule = true;
-	
-	var _vdom = __webpack_require__(23);
-	
-	var _compilerParseExpr = __webpack_require__(4);
-	
-	exports['default'] = {
-	    parse: function parse(cur, src, binding, scope) {
-	        src.children = [];
-	        cur.children = [];
-	        cur.children.push(new _vdom.VText({
-	            nodeType: 3,
-	            type: '#text',
-	            dynamic: true,
-	            nodeValue: _compilerParseExpr.parseExpr(binding.expr).getter(scope)
-	        }));
-	    },
-	
-	    diff: function diff(copy, src) {
-	        if (!src.children.length) {
-	            var dom = src.dom;
-	            if (dom && !src.isVoidTag) {
-	                while (dom.firstChild) {
-	                    dom.removeChild(dom.firstChild);
-	                }
-	                var text = document.createTextNode('x');
-	                dom.appendChild(text);
-	                var a = { nodeType: 3, type: '#text', dom: text };
-	                src.children.push(new _vdom.VText(a));
-	            }
-	        }
-	    }
-	};
-	module.exports = exports['default'];
-
-/***/ },
-/* 34 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Created by cgspine on 16/7/18.
-	 */
-	
-	'use strict';
-	
-	__webpack_require__(35);
-
-/***/ },
-/* 35 */
-/***/ function(module, exports) {
-
-	/**
-	 * Created by cgspine on 16/7/18.
-	 */
-	
-	"use strict";
-	
-	var arrProto = Array.prototype;
-	
-	Array.prototype.contain = function (el) {
-	    return this.indexOf(el) !== -1;
-	};
-	
-	Array.prototype.ensure = function (el) {
-	    if (!this.contain(el)) {
-	        this.push(el);
-	    }
-	};
-
-/***/ },
-/* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -2767,8 +2687,52 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 37 */
-/***/ function(module, exports) {
+/* 34 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/23.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	var _vdom = __webpack_require__(26);
+	
+	var _compilerParseExpr = __webpack_require__(4);
+	
+	exports['default'] = {
+	    parse: function parse(cur, src, binding, scope) {
+	        src.children = [];
+	        cur.children = [];
+	        cur.children.push(new _vdom.VText({
+	            nodeType: 3,
+	            type: '#text',
+	            dynamic: true,
+	            nodeValue: _compilerParseExpr.parseExpr(binding.expr).getter(scope)
+	        }));
+	    },
+	
+	    diff: function diff(copy, src) {
+	        if (!src.children.length) {
+	            var dom = src.dom;
+	            if (dom && !src.isVoidTag) {
+	                while (dom.firstChild) {
+	                    dom.removeChild(dom.firstChild);
+	                }
+	                var text = document.createTextNode('x');
+	                dom.appendChild(text);
+	                var a = { nodeType: 3, type: '#text', dom: text };
+	                src.children.push(new _vdom.VText(a));
+	            }
+	        }
+	    }
+	};
+	module.exports = exports['default'];
+
+/***/ },
+/* 35 */
+/***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Created by cgspine on 16/7/30.
@@ -2777,14 +2741,67 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 	
 	exports.__esModule = true;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _maruo = __webpack_require__(1);
+	
+	var _maruo2 = _interopRequireDefault(_maruo);
+	
 	exports['default'] = {
-	    parse: function parse(cur, src, binding, scope) {},
+	    parse: function parse(copy, src, binding) {
+	        copy[binding.name] = binding.expr;
+	    },
 	
 	    diff: function diff(copy, src, name) {
-	        console.log('haha');
+	        if (copy[name] !== src[name]) {
+	            var id = src[name] = copy[name];
+	            var scope = _maruo2['default'].scopes[id];
+	            if (scope) {
+	                return;
+	            }
+	            var vm = _maruo2['default'].vms[id];
+	            _maruo2['default'].scopes[id] = {
+	                vmodel: vm
+	            };
+	        }
 	    }
 	};
 	module.exports = exports['default'];
+
+/***/ },
+/* 36 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/7/18.
+	 */
+	
+	'use strict';
+	
+	__webpack_require__(37);
+
+/***/ },
+/* 37 */
+/***/ function(module, exports) {
+
+	/**
+	 * Created by cgspine on 16/7/18.
+	 */
+	
+	"use strict";
+	
+	var arrProto = Array.prototype;
+	
+	Array.prototype.contain = function (el) {
+	    return this.indexOf(el) !== -1;
+	};
+	
+	Array.prototype.ensure = function (el) {
+	    if (!this.contain(el)) {
+	        this.push(el);
+	    }
+	};
 
 /***/ }
 /******/ ])

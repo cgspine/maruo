@@ -178,8 +178,8 @@ Observable.prototype.makePropAccessor = function (key) {
            }else{
                root.$emit(spath, val, newValue)
            }
-           self.batchUpdateView()
            val = newValue
+           self.batchUpdateView()
        },
        enumerable: true,
        configurable: true

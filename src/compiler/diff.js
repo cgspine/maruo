@@ -3,7 +3,6 @@
  */
 
 import maruo from '../maruo'
-import { rword } from '../util'
 
 var emptyArr = []
 var emptyObj = function () {

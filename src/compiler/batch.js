@@ -29,7 +29,7 @@ function batch(id) {
         reconcile([dom], source, dom.parentNode)
         delete maruo.scopes[id]
     }
-    
+
     diff(copy,source)
     
     var index = needRenderIds.indexOf(renderingId)
