@@ -746,56 +746,7 @@
      *                    #CSS                                           *
      *********************************************************************/
 
-    /**
-     * 将中划线式styleName转换为驼峰式
-     * eg:background-color => backgroundColor; -moz-transition => MozTransition; -ms-transition => msTransition
-     * ms前缀的需要特殊处理
-     * @param str
-     */
-    function camlizeStyleName(str){
-        if (!str || str.indexOf("-") < 0 && str.indexOf("_") < 0) {
-            return str
-        }
-        return camelize(str.replace(/^-ms-/,'ms-'));
-    }
-
-    /**
-     * 将驼峰式styleName转换为中划线式
-     * eg:backgroundColor=>background-color; MozTransition => -moz-transition; msTransition => -ms-transition
-     * @param str
-     */
-    function hyphenateStyleName(str){
-        hyphenate(str).replace(/^ms-/,'-ms-');
-    }
-
-    var _getTransitionPropertiesEndAndPrefix = (function(){
-        var endEvent,
-            prefix = '',
-            transitions = {
-                O:'otransitionend',
-                Moz:'transitionend',
-                Webkit:'webkitTransitionEnd',
-                ms:'MSTransitionEnd'
-            };
-
-        for(var vender in transitions){
-            if(hasOwn.call(transitions,vender)){
-                if(cinerator.style[vender+'TransitionProperty'] !== void 0){
-                    prefix = '-'+vender.toLowerCase()+'-';
-                    endEvent = transitions[vender];
-                    break;
-                }
-            }
-        }
-
-        if(!endEvent && cinerator.style.transitionProperty !== void 0){
-            endEvent = 'transitionend';
-        }
-        return {
-            end:endEvent,
-            prefix:prefix
-        }
-    })();
+    
 
     var prefixes = [''];
     var prefix = _getTransitionPropertiesEndAndPrefix.prefix;
@@ -807,7 +758,8 @@
         'float' : w3c ? 'cssFloat' : 'styleFloat'
     };
     //这里的属性不需要自行添加px
-    maruo.cssNumber = maruo.oneObject("columnCount,fillOpacity,fontSizeAdjust,fontWeight,lineHeight,opacity,orphans,widows,zIndex,zoom,rotate");
+    maruo.cssNumber = maruo.oneObject("animationIterationCount,columnCount,order,flex,flexGrow,flexShrink," +
+        "fillOpacity,fontWeight,lineHeight,opacity,orphans,widows,zIndex,zoom");
 
     maruo.transitionend = _getTransitionPropertiesEndAndPrefix.end;
     
