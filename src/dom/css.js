@@ -106,6 +106,11 @@ function cssName(name, host) {
     return null;
 }
 
+/**
+ * position适用于取得相对于offsetParent的偏移量
+ * @param el
+ * @returns {*}
+ */
 export function position(el) {
     var parentOffset = { left : 0, top: 0 },
         _offset, _offsetParent
@@ -116,34 +121,36 @@ export function position(el) {
         //getBoundingClientRect返回值是一个DOMRect对象,其top、left值是相对于视口的,因此只有fixed可以采用这个
         _offset = el.getBoundingClientRect()
     } else {
-        _offsetParent = offsetParent(el)
-        _offset = offset(el)
-        if (_offsetParent[0].tagName.toUpperCase() !== "HTML") {
-            parentOffset = _offsetParent.offset()
+        _offsetParent = offsetParent(el) // Get *real* offsetParent
+        _offset = offset(el) // Get correct offsets
+        if (_offsetParent.tagName !== "HTML") {
+            parentOffset = offset(_offsetParent)
         }
-        parentOffset.top += css(_offsetParent[0], "borderTopWidth", true)
-        parentOffset.left += css(_offsetParent[0], "borderLeftWidth", true)
-
-        // Subtract offsetParent scroll positions
-        parentOffset.top -= _offsetParent.scrollTop()
-        parentOffset.left -= _offsetParent.scrollLeft()
+        parentOffset.top += css(_offsetParent, "borderTopWidth", true)
+        parentOffset.left += css(_offsetParent, "borderLeftWidth", true)
     }
+    // Subtract parent offsets and element margins
     return {
-        top: _offset.top - parentOffset.top - css(elem, "marginTop", true),
-        left: _offset.left - parentOffset.left - css(elem, "marginLeft", true)
+        top: _offset.top - parentOffset.top - css(el, "marginTop", true),
+        left: _offset.left - parentOffset.left - css(el, "marginLeft", true)
     }
 }
 
+/**
+ * 获取元素到document.documentElement的offset
+ * @param el
+ * @returns {*}
+ */
 export function offset(el) { //取得距离页面左右角的坐标
     if ( !el.getClientRects().length ) {
         return { top: 0, left: 0 };
     }
 
-    var rect = elem.getBoundingClientRect();
+    var rect = el.getBoundingClientRect();
 
     // Make sure element is not hidden (display: none)
     if ( rect.width || rect.height ) {
-        var doc = elem.ownerDocument;
+        var doc = el.ownerDocument;
         var root =  doc.documentElement
         var win = doc.defaultView
         return {
@@ -164,6 +171,11 @@ export function offset(el) { //取得距离页面左右角的坐标
  * 1) For the element inside the iframe without offsetParent, this method will return documentElement of the parent window
  * 2) For the hidden or detached element
  * 3) For body or html element, i.e. in case of the html node - it will return itself
+ *
+ * 如果一个元素的css position为relative、absolute、fixed,那我们可以说这个元素被定位了
+ * An element is said to be positioned if it has a CSS position attribute of relative, absolute, or fixed (from JQuery)
+ *
+ * 用于寻找最近而且被定位的祖先元素
  */
 export function offsetParent(el) {
     // 在 Webkit 中，如果元素为隐藏的（该元素或其祖先元素的 style.display 为 "none"），或者该元素的 style.position 被设为 "fixed"，则该属性返回 null。
@@ -204,12 +216,13 @@ export function css(el, name, value) {
     var prop = camelize(name)
     name = cssName(prop) || prop
     var fn
-    if (value === void 0) { // 读取样式
+    if (value === void 0 || typeof value === 'boolean') { // 读取样式
         fn = cssHooks[prop+ ':get'] || cssHooks['@:get']
         if (name === 'background') {
             name = 'backgroundColor'
         }
-        return fn(el, name)
+        var val = fn(el, name)
+        return value === true ? parseFloat(val) || 0 : val
     } else if (value === '') {  // 清除样式
         node.style[name] = ''
     } else {  // 设置样式
