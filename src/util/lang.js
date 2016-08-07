@@ -3,6 +3,7 @@
  */
 
 import { rword } from './const'
+import { isArrayLike } from './is'
 
 var rcamelize = /[-_]([^-_])/g;
 var rhyphenate = /([a-z\d])([A-Z]+)/g;
@@ -78,4 +79,22 @@ export function hideProperty(host, name, value) {
         enumerable: false,
         configurable: true
     })
+}
+
+export function each(obj, fn) {
+    if (obj) { //排除null, undefined
+        var i = 0
+        if (isArrayLike(obj)) {
+            for (var n = obj.length; i < n; i++) {
+                if (fn(i, obj[i]) === false)
+                    break
+            }
+        } else {
+            for (i in obj) {
+                if (obj.hasOwnProperty(i) && fn(i, obj[i]) === false) {
+                    break
+                }
+            }
+        }
+    }
 }

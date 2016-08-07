@@ -1,9 +1,7 @@
 /**
  * Created by cgspine on 16/8/2.
  */
-import  maruo from '../maruo'
-import browser from '../dom/browser'
-import { hasOwn, rword, camelize, hyphenate } from '../util'
+import { hasOwn, rword, camelize, hyphenate, each, oneObject } from '../util'
 import browser from '../dom/browser'
 
 /*********************************************************************
@@ -19,6 +17,7 @@ var cssHooks = {
         }
         var ret, computed = browser.window.getComputedStyle(node)
         if (computed) {
+            //IE9下"filter"只能通过getPropertyValue取值.https://github.com/jquery/jquery/commit/9ced0274653b8b17ceb6b0675e2ae05433dcf202
             ret = name === "filter" ? computed.getPropertyValue(name) : computed[name]
             if (ret === "") {
                 ret = node.style[name] //一些浏览器需要我们手动取内联样式
@@ -36,8 +35,84 @@ cssHooks["opacity:get"] = function (node) {
 "top,left".replace(rword, function (name) {
     cssHooks[name + ":get"] = function (node) {
         var computed = cssHooks["@:get"](node, name)
-        return /px$/.test(computed) ? computed :
-        avalon(node).position()[name] + "px"
+        return /px$/.test(computed) ? computed : position(node)[name] + "px"
+    }
+})
+
+export const WH = {
+    
+}
+each({
+    Width: 'width',
+    Height: 'height'
+}, function (name, method) {
+    var clientProp = 'client' + name,
+        scrollProp = 'scroll' + name,
+        offsetProp = 'offset' + name
+    cssHooks[method + ":get"] = function (node, which, override) {
+        var boxSizing = -4
+        if (typeof override === "number") {
+            boxSizing = override
+        }
+        which = name === "Width" ? ["Left", "Right"] : ["Top", "Bottom"]
+        var ret = node[offsetProp] // border-box 0
+        if (boxSizing === 2) { // margin-box 2
+            return ret + css(node, "margin" + which[0], true) + css(node, "margin" + which[1], true)
+        }
+        if (boxSizing < 0) { // padding-box  -2
+            ret = ret - css(node, "border" + which[0] + "Width", true) - css(node, "border" + which[1] + "Width", true)
+        }
+        if (boxSizing === -4) { // content-box -4
+            ret = ret - css(node, "padding" + which[0], true) - css(node, "padding" + which[1], true)
+        }
+        return ret
+    }
+
+    cssHooks[method + "&get"] = function (node) {
+        var hidden = []
+        showHidden(node, hidden)
+        var val = cssHooks[method + ":get"](node)
+        for (var i = 0, obj; obj = hidden[i++]; ) {
+            node = obj.node
+            for (var n in obj) {
+                if (typeof obj[n] === "string") {
+                    node.style[n] = obj[n]
+                }
+            }
+        }
+        return val
+    }
+    WH[method] = function (val) {
+        var node = this[0]
+        if (arguments.length === 0) {
+            if (node.setTimeout) { // window, IE9+后可以用node.innerWidth /innerHeight代替
+                return node["inner" + name]
+            }
+            if (node.nodeType === 9) { // document, 页面
+                var doc = node.documentElement
+                // offsetWidth:
+                // IE、Opera认为 offsetWidth = clientWidth + 滚动条 + 边框
+                // NS、FF认为OffsetWidth为网页内容的实际宽度,可以小于页面宽度
+
+                // scrollWidth:
+                // IE、Opera认为scrollWidth为网页内容的实际宽度,可以小于clientWidth
+                // NS、FF认为scrollWidth为网页内容宽度,不过最小值为clientWidth
+
+                // FF chrome    html.scrollHeight< body.scrollHeight
+                // IE 标准模式 : html.scrollHeight> body.scrollHeight
+                return Math.max(node.body[scrollProp], doc[scrollProp], node.body[offsetProp], doc[offsetProp], doc[clientProp])
+            }
+            return cssHooks[method + "&get"](node)
+        } else {
+            return this.css(method, val)
+        }
+    }
+
+    WH["inner" + name] = function () {
+        return cssHooks[method + ":get"](this[0], void 0, -2)
+    }
+    WH["outer" + name] = function (includeMargin) {
+        return cssHooks[method + ":get"](this[0], void 0, includeMargin === true ? 2 : 0)
     }
 })
 
@@ -45,8 +120,36 @@ var cssMap = {
     'float' : 'cssFloat'
 };
 
+// Swappable if display is none or starts with table
+// except "table", "table-cell", or "table-caption"
+// See here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
+var rdisplayswap = /^(none|table(?!-c[ea]).+)/
+
+var cssShow = { position: "absolute", visibility: "hidden", display: "block" }
+
+function showHidden(node, array) {
+    //http://www.cnblogs.com/rubylouvre/archive/2012/10/27/2742529.html
+    if (node.offsetWidth <= 0) { //opera.offsetWidth可能小于0
+        var styles = getComputedStyle(node, null)
+        if (rdisplayswap.test(styles["display"])) {
+            var obj = {
+                node: node
+            }
+            for (var name in cssShow) {
+                obj[name] = styles[name]
+                node.style[name] = cssShow[name]
+            }
+            array.push(obj)
+        }
+        var parent = node.parentNode
+        if (parent && parent.nodeType === 1) {
+            showHidden(parent, array)
+        }
+    }
+}
+
 //这里的属性不需要自行添加px
-var cssNumber = maruo.oneObject("columnCount,fillOpacity,fontSizeAdjust,fontWeight,lineHeight,opacity,orphans,widows,zIndex,zoom,rotate");
+var cssNumber = oneObject("animationIterationCount,columnCount,fillOpacity,fontSizeAdjust,fontWeight,lineHeight,opacity,orphans,widows,zIndex,zoom,rotate,flexGrow,flexShrink,order");
 
 var transitionPropertiesEndAndPrefix = (function(){
     var endEvent,
@@ -83,7 +186,7 @@ export const transitionEndEventName = transitionPropertiesEndAndPrefix.end
 var prefixes = [''];
 var prefix = transitionPropertiesEndAndPrefix.prefix;
 if(prefix !== ''){
-    prefixes.unshift(prefix);
+    prefixes.push(prefix);
 }
 
 /**

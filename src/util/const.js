@@ -4,6 +4,6 @@
 
 export const rword = /[^, ]+/g
 
-export const toString = String.prototype.toString
+export const toString = Object.prototype.toString
 
 export const hasOwn = Object.prototype.hasOwnProperty

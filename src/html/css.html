@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>css</title>
+    <style>
+        #demo{
+            width:200px;
+            height:200px;
+            position: absolute;
+            left:200px;
+            top: 200px;
+            background: #f00;
+        }
+    </style>
+</head>
+<body>
+<div id="demo">
+</div>
+<script src="../../dist/maruo.js"></script>
+<script>
+    var demo = maruo(document.getElementById('demo'));
+    console.log(`width:: + ${demo.width()}`)
+    var position = demo.position();
+    console.log(`position:: + left: ${position.left} + top: ${position.top}`)
+    var offsetParent = demo.offsetParent();
+    console.log(`offsetParent:: + ${offsetParent.tagName}`)
+    var offset = demo.offset();
+    console.log(`offset:: + left: ${offset.left} + top: ${offset.top}`)
+
+</script>
+</body>
+</html>
