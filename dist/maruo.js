@@ -1652,6 +1652,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function mixinDom(maruo) {
 	    maruo.shadowCopy(maruo.fn, _css2.WH);
+	    maruo.shadowCopy(maruo.fn, _css2.scroll);
 	    maruo.shadowCopy(maruo.fn, {
 	        offset: function offset() {
 	            return _css2.offset(this[0]);
@@ -3045,6 +3046,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	        fn(el, name, value);
 	    }
 	}
+	
+	function getWindow(node) {
+	    return node.window || node.defaultView || false;
+	}
+	
+	var scroll = {};
+	
+	exports.scroll = scroll;
+	_util.each({
+	    scrollLeft: "pageXOffset",
+	    scrollTop: "pageYOffset"
+	}, function (method, prop) {
+	    scroll[method] = function (val) {
+	        var node = this[0] || {},
+	            win = getWindow(node),
+	            top = method === "scrollTop";
+	        if (!arguments.length) {
+	            return win ? win[prop] : node[method];
+	        } else {
+	            if (win) {
+	                win.scrollTo(!top ? val : win[prop], top ? val : win[prop]);
+	            } else {
+	                node[method] = val;
+	            }
+	        }
+	    };
+	});
 
 /***/ },
 /* 33 */

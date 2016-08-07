@@ -3,10 +3,11 @@
  */
 import ready from './ready'
 import scan from './scan'
-import { WH, css, offset, offsetParent, position } from './css'
+import { WH, scroll, css, offset, offsetParent, position } from './css'
 
 export default function mixinDom(maruo) {
     maruo.shadowCopy(maruo.fn,WH)
+    maruo.shadowCopy(maruo.fn, scroll)
     maruo.shadowCopy(maruo.fn,{
         offset: function () {
             return offset(this[0])

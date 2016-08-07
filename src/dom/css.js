@@ -339,3 +339,29 @@ export function css(el, name, value) {
         fn(el, name, value)
     }
 }
+
+function getWindow(node) {
+    return node.window || node.defaultView || false
+}
+
+export const scroll = {}
+
+each({
+    scrollLeft: "pageXOffset",
+    scrollTop: "pageYOffset"
+}, function (method, prop) {
+    scroll[method] = function (val) {
+        var node = this[0] || {},
+            win = getWindow(node),
+            top = method === "scrollTop"
+        if (!arguments.length) {
+            return win ? win[prop] : node[method]
+        } else {
+            if (win) {
+                win.scrollTo(!top ? val : win[prop], top ? val : win[prop])
+            } else {
+                node[method] = val
+            }
+        }
+    }
+})
