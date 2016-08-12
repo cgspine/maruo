@@ -9,6 +9,7 @@ var rcamelize = /[-_]([^-_])/g;
 var rhyphenate = /([a-z\d])([A-Z]+)/g;
 var rhashcode = /\d\.\d{4}/
 var rescape = /[-.*+?^${}()|[\]\/\\]/g
+var rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g
 
 export function oneObject(array, val) {
     if (typeof array === 'string') {
@@ -97,4 +98,9 @@ export function each(obj, fn) {
             }
         }
     }
+}
+
+
+export function trim(text) {
+    return text == null ? "" :  ( text + "" ).replace( rtrim, "" );
 }

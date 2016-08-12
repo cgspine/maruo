@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>属性操作测试</title>
+</head>
+<body>
+    <select>
+        <option>1</option>
+        <option>2</option>
+        <option>3</option>
+        <option>4</option>
+    </select>
+<script>
+    var opt = document.getElementsByTagName('option')[0]
+    console.log(opt.getAttribute('value'))
+    console.log(opt.text)
+</script>
+</body>
+</html>
