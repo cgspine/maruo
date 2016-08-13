@@ -84,11 +84,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _dom2 = _interopRequireDefault(_dom);
 	
-	var _directives = __webpack_require__(33);
+	var _directives = __webpack_require__(36);
 	
 	var _directives2 = _interopRequireDefault(_directives);
 	
-	__webpack_require__(37);
+	__webpack_require__(40);
 	
 	_core2['default'](_maruo2['default']);
 	_vm2['default'](_maruo2['default']);
@@ -603,6 +603,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.escapeRegExp = escapeRegExp;
 	exports.hideProperty = hideProperty;
 	exports.each = each;
+	exports.trim = trim;
 	
 	var _const = __webpack_require__(3);
 	
@@ -612,6 +613,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var rhyphenate = /([a-z\d])([A-Z]+)/g;
 	var rhashcode = /\d\.\d{4}/;
 	var rescape = /[-.*+?^${}()|[\]\/\\]/g;
+	var rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g;
 	
 	function oneObject(array, val) {
 	    if (typeof array === 'string') {
@@ -694,6 +696,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	        }
 	    }
+	}
+	
+	function trim(text) {
+	    return text == null ? "" : (text + "").replace(rtrim, "");
 	}
 
 /***/ },
@@ -1650,6 +1656,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _css2 = __webpack_require__(32);
 	
+	var _attr2 = __webpack_require__(33);
+	
+	var _val2 = __webpack_require__(34);
+	
 	function mixinDom(maruo) {
 	    maruo.shadowCopy(maruo.fn, _css2.WH);
 	    maruo.shadowCopy(maruo.fn, _css2.scroll);
@@ -1665,6 +1675,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	        },
 	        position: function position() {
 	            return _css2.position(this[0]);
+	        },
+	        attr: function attr(name, val) {
+	            return _attr2.attr(this[0], name, val);
+	        },
+	        val: function val(value) {
+	            if (value !== void 0) {
+	                _val2.val(this[0], value);
+	                return this;
+	            } else {
+	                return _val2.val(this[0]);
+	            }
 	        }
 	    });
 	    _ready2['default'](function () {
@@ -3076,6 +3097,226 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 33 */
+/***/ function(module, exports) {
+
+	/**
+	 * Created by cgspine on 16/8/9.
+	 */
+	
+	'use strict';
+	
+	exports.__esModule = true;
+	exports.attr = attr;
+	var propMap = { //不规则的属性名映射
+	    'accept-charset': 'acceptCharset',
+	    'char': 'ch',
+	    'charoff': 'chOff',
+	    'class': 'className',
+	    'for': 'htmlFor',
+	    'http-equiv': 'httpEquiv'
+	};
+	/*
+	 contenteditable不是布尔属性
+	 http://www.zhangxinxu.com/wordpress/2016/01/contenteditable-plaintext-only/
+	 contenteditable=''
+	 contenteditable='events'
+	 contenteditable='caret'
+	 contenteditable='plaintext-only'
+	 contenteditable='true'
+	 contenteditable='false'
+	 */
+	var bools = ['autofocus,autoplay,async,allowTransparency,checked,controls', 'declare,disabled,defer,defaultChecked,defaultSelected,', 'isMap,loop,multiple,noHref,noResize,noShade', 'open,readOnly,selected'].join(',');
+	
+	bools.replace(/\w+/g, function (name) {
+	    propMap[name.toLowerCase()] = name;
+	});
+	
+	var anomaly = ['accessKey,bgColor,cellPadding,cellSpacing,codeBase,codeType,colSpan', 'dateTime,defaultValue,contentEditable,frameBorder,longDesc,maxLength,' + 'marginWidth,marginHeight,rowSpan,tabIndex,useMap,vSpace,valueType,vAlign'].join(',');
+	
+	anomaly.replace(/\w+/g, function (name) {
+	    propMap[name.toLowerCase()] = name;
+	});
+	
+	function attr(el, name, value) {
+	    if (el) {
+	        if (arguments.length === 3) {
+	            el.setAttribute(name, value);
+	        } else {
+	            el.getAttribute(name);
+	        }
+	    }
+	}
+
+/***/ },
+/* 34 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/8/9.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	exports.getValType = getValType;
+	exports.val = val;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _attr = __webpack_require__(33);
+	
+	var _util = __webpack_require__(7);
+	
+	var _support = __webpack_require__(35);
+	
+	var _support2 = _interopRequireDefault(_support);
+	
+	var rspaces = /[\x20\t\r\n\f]+/g;
+	
+	function getValType(el) {
+	    var ret = el.tagName.toLowerCase();
+	    return ret === 'input' && /checkbox|radio/.test(el.type) ? 'checked' : ret;
+	}
+	
+	var valHooks = {
+	    'option:get': function optionGet(node) {
+	        var val = _attr.attr(node, "value");
+	        return val != null ? val :
+	
+	        // Support: IE <=10 - 11 only
+	        // option.text throws exceptions (#14686, #14858)
+	        // Strip and collapse whitespace
+	        // https://html.spec.whatwg.org/#strip-and-collapse-whitespace
+	        _util.trim(node.text).replace(rspaces, " ");
+	    },
+	    'select:get': function self(node) {
+	        var value,
+	            option,
+	            i,
+	            options = node.options,
+	            index = node.selectedIndex,
+	            one = node.type === "select-one",
+	            values = one ? null : [],
+	            max = one ? index + 1 : options.length;
+	
+	        if (index < 0) {
+	            i = max;
+	        } else {
+	            i = one ? index : 0;
+	        }
+	
+	        // Loop through all the selected options
+	        for (; i < max; i++) {
+	            option = options[i];
+	
+	            // Support: IE <=9 only
+	            // IE8-9 doesn't update selected after form reset
+	            if ((option.selected || i === index) &&
+	            // Don't return options that are disabled or in a disabled optgroup
+	            !option.disabled && (!option.parentNode.disabled || option.parentNode.nodeName.toLowerCase() === 'optgroup')) {
+	
+	                // Get the specific value for the option
+	                value = val(option);
+	
+	                // We don't need an array for one selects
+	                if (one) {
+	                    return value;
+	                }
+	
+	                // Multi-Selects return an array
+	                values.push(value);
+	            }
+	        }
+	
+	        return values;
+	    },
+	    'select:set': function selectSet(node, values) {
+	        if (_util.isArrayLike(values)) {
+	            values = [].slice.call(values);
+	        } else {
+	            values = [values + ''];
+	        }
+	        var options = node.options,
+	            i = options.length,
+	            el,
+	            optionSet;
+	
+	        while (i--) {
+	            el = options[i];
+	            if (el.selected = values.indexOf(val(el)) > -1) {
+	                console.log(val(el));
+	                optionSet = true;
+	            }
+	        }
+	        if (!optionSet) {
+	            node.selectedIndex = -1;
+	        }
+	        return values;
+	    },
+	
+	    'checked:set': function checkedSet(node, values) {
+	        if (_util.isArrayLike(values)) {
+	            values = [].slice.call(values);
+	        } else {
+	            values = [values + ''];
+	        }
+	
+	        return node.checked = values.indexOf(val(node)) > -1;
+	    }
+	};
+	
+	if (_support2['default'].checkOn) {
+	    valHooks['checked:get'] = function (node) {
+	        return node.getAttribute("value") === null ? "on" : node.value;
+	    };
+	}
+	
+	function val(node, value) {
+	    if (node && node.nodeType === 1) {
+	        var get = arguments.length === 1;
+	        var access = get ? ':get' : ':set';
+	        var fn = valHooks[getValType(node) + access];
+	        if (fn) {
+	            var val = fn(node, value);
+	        } else if (get) {
+	            return (node.value || '').replace(/\r/g, '');
+	        } else {
+	            node.value = value;
+	        }
+	    }
+	    return val;
+	}
+
+/***/ },
+/* 35 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/8/13.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _browser = __webpack_require__(13);
+	
+	var _browser2 = _interopRequireDefault(_browser);
+	
+	var support = {};
+	
+	var input = _browser2['default'].document.createElement('input');
+	input.type = "checkbox";
+	
+	// Support: Android <=4.3 only
+	// Default value for a checkbox should be "on"
+	support.checkOn = input.value !== "";
+	
+	exports['default'] = support;
+	module.exports = exports['default'];
+
+/***/ },
+/* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -3089,15 +3330,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _expr = __webpack_require__(34);
+	var _expr = __webpack_require__(37);
 	
 	var _expr2 = _interopRequireDefault(_expr);
 	
-	var _text = __webpack_require__(35);
+	var _text = __webpack_require__(38);
 	
 	var _text2 = _interopRequireDefault(_text);
 	
-	var _controller = __webpack_require__(36);
+	var _controller = __webpack_require__(39);
 	
 	var _controller2 = _interopRequireDefault(_controller);
 	
@@ -3110,7 +3351,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 34 */
+/* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -3145,7 +3386,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 35 */
+/* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -3189,7 +3430,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 36 */
+/* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -3228,7 +3469,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 37 */
+/* 40 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -3237,10 +3478,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	'use strict';
 	
-	__webpack_require__(38);
+	__webpack_require__(41);
 
 /***/ },
-/* 38 */
+/* 41 */
 /***/ function(module, exports) {
 
 	/**

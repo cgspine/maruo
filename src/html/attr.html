@@ -5,16 +5,29 @@
     <title>属性操作测试</title>
 </head>
 <body>
-    <select>
-        <option>1</option>
+    <select id="select">
+        <option> 1 </option>
         <option>2</option>
         <option>3</option>
         <option>4</option>
     </select>
-<script>
-    var opt = document.getElementsByTagName('option')[0]
-    console.log(opt.getAttribute('value'))
-    console.log(opt.text)
-</script>
+    <input type="checkbox" id="input">
+    <script src="../../dist/maruo.js"></script>
+    <script>
+        var select = document.getElementById('select')
+        var opt = document.getElementsByTagName('option')[0]
+        console.log(opt.getAttribute('value'))
+        console.log(opt.text)
+
+        console.log('maruo:select:get:' + maruo(select).val())
+        console.log('maruo:option:get:' + maruo(opt).val())
+        maruo(select).val(2)
+        console.log('maruo:select:get:afterSet:' + maruo(select).val())
+
+        var input = document.getElementById('input')
+        console.log(input.value)
+        console.log('maruo:checked:get:' + maruo(input).val())
+        maruo(input).val('on')
+    </script>
 </body>
 </html>

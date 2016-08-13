@@ -5,6 +5,7 @@ import ready from './ready'
 import scan from './scan'
 import { WH, scroll, css, offset, offsetParent, position } from './css'
 import { attr } from './attr'
+import { val } from './val'
 
 export default function mixinDom(maruo) {
     maruo.shadowCopy(maruo.fn,WH)
@@ -24,6 +25,15 @@ export default function mixinDom(maruo) {
         },
         attr: function (name, val) {
             return attr(this[0], name, val)
+        },
+        val: function (value) {
+            if(value !== void 0){
+                val(this[0], value)
+                return this
+            } else {
+                return val(this[0])
+            }
+
         }
     })
     ready(function () {

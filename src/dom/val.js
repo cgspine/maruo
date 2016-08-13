@@ -2,7 +2,8 @@
  * Created by cgspine on 16/8/9.
  */
 import { attr } from './attr'
-import { trim } from '../util'
+import { trim, isArrayLike } from '../util'
+import support from './support'
 
 var rspaces = /[\x20\t\r\n\f]+/g
 
@@ -23,53 +24,92 @@ var valHooks = {
             // https://html.spec.whatwg.org/#strip-and-collapse-whitespace
             trim(node.text).replace(rspaces, " ");
     },
-    'select:get': function self(node, ret, index, singleton) {
-        var nodes = node.children, value,
-            getter = valHooks['option:get']
-        index = ret ? index : node.selectedIndex
-        singleton = ret ? singleton : node.type === 'select-one' || index < 0
-        ret = ret || []
-        for (var i = 0, el; el = nodes[i++]; ) {
-            if (!el.disabled) {
-                switch (el.nodeName.toLowerCase()) {
-                    case 'option':
-                        if ((el.selected || el.index === index)) {
-                            value = el.value
-                            if (singleton) {
-                                return value
-                            } else {
-                                ret.push(value)
-                            }
-                        }
-                        break
-                    case 'optgroup':
-                        value = self(el, ret, index, singleton)
-                        if (typeof value === 'string') {
-                            return value
-                        }
-                        break
+    'select:get': function self(node) {
+        var value, option, i,
+            options = node.options,
+            index = node.selectedIndex,
+            one = node.type === "select-one",
+            values = one ? null : [],
+            max = one ? index + 1 : options.length;
+
+        if ( index < 0 ) {
+            i = max;
+
+        } else {
+            i = one ? index : 0;
+        }
+
+        // Loop through all the selected options
+        for ( ; i < max; i++ ) {
+            option = options[i];
+
+            // Support: IE <=9 only
+            // IE8-9 doesn't update selected after form reset
+            if ((option.selected || i === index ) &&
+                // Don't return options that are disabled or in a disabled optgroup
+                !option.disabled &&
+                (!option.parentNode.disabled ||
+                option.parentNode.nodeName.toLowerCase() === 'optgroup')) {
+
+                // Get the specific value for the option
+                value = val(option);
+
+                // We don't need an array for one selects
+                if ( one ) {
+                    return value;
                 }
+
+                // Multi-Selects return an array
+                values.push( value );
             }
         }
-        return singleton ? null : ret
+
+        return values;
     },
-    'select:set': function (node, values, optionSet) {
-        values = [].concat(values) //强制转换为数组
-        for (var i = 0, el; el = node.options[i++]; ) {
-            if ((el.selected = values.indexOf(el.value) > -1)) {
-                optionSet = true
+    'select:set': function (node, values) {
+        if (isArrayLike(values)){
+            values = [].slice.call(values)
+        } else {
+            values = [values + '']
+        }
+        var options = node.options,
+            i = options.length,
+            el,
+            optionSet
+
+        while (i--) {
+            el = options[i];
+            if (el.selected = values.indexOf(val(el)) > -1) {
+                console.log(val(el))
+                optionSet = true;
             }
         }
-        if (!optionSet) {
-            node.selectedIndex = -1
+        if ( !optionSet ) {
+            node.selectedIndex = -1;
         }
+        return values;
+    },
+
+    'checked:set': function (node,values) {
+        if (isArrayLike(values)){
+            values = [].slice.call(values)
+        } else {
+            values = [values + '']
+        }
+       
+        return node.checked = (values.indexOf(val(node)) > -1)
     }
 }
 
-export function val(value) {
-    var node = this[0]
+if (support.checkOn) {
+    valHooks['checked:get'] = function (node) {
+        return node.getAttribute("value") === null ? "on" : node.value;
+    }
+}
+
+export function val(node, value) {
     if (node && node.nodeType === 1) {
-        var get = arguments.length === 0
+        var get = arguments.length === 1
         var access = get ? ':get' : ':set'
         var fn = valHooks[getValType(node) + access]
         if (fn) {
@@ -80,5 +120,5 @@ export function val(value) {
             node.value = value
         }
     }
-    return get ? val : this
+    return val
 }
