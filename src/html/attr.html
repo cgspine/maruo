@@ -11,7 +11,8 @@
         <option>3</option>
         <option>4</option>
     </select>
-    <input type="checkbox" id="input">
+    <input id="radio" value="333"></input>
+    <input type="checkbox" id="input" tabindex="1">
     <script src="../../dist/maruo.js"></script>
     <script>
         var select = document.getElementById('select')
@@ -21,13 +22,26 @@
 
         console.log('maruo:select:get:' + maruo(select).val())
         console.log('maruo:option:get:' + maruo(opt).val())
+        console.log('maruo:option:prop:selected:' + maruo(opt).prop('selected'))
         maruo(select).val(2)
         console.log('maruo:select:get:afterSet:' + maruo(select).val())
+        console.log('maruo:option:prop:selected:afterSet:' + maruo(opt).prop('selected'))
 
         var input = document.getElementById('input')
         console.log(input.value)
         console.log('maruo:checked:get:' + maruo(input).val())
         maruo(input).val('on')
+
+        console.log('maruo:input:tabIndex:' + maruo(input).prop('tabIndex'))
+        maruo(input).prop('tabIndex',3)
+        console.log('maruo:input:tabIndex:afterSet:' + maruo(input).prop('tabIndex'))
+
+        var radio = document.getElementById('radio');
+        console.log('maruo:radio:type:' + maruo(radio).attr('type'))
+        console.log('maruo:radio:val:' + maruo(radio).val())
+        maruo(radio).attr('type','radio')
+        console.log('maruo:radio:type:afterChangeToRadio:' + maruo(radio).attr('type'))
+        console.log('maruo:radio:val:afterChangeToRadio:' + maruo(radio).val())
     </script>
 </body>
 </html>

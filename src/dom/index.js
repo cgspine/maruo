@@ -4,7 +4,7 @@
 import ready from './ready'
 import scan from './scan'
 import { WH, scroll, css, offset, offsetParent, position } from './css'
-import { attr } from './attr'
+import { attr, prop } from './attr'
 import { val } from './val'
 
 export default function mixinDom(maruo) {
@@ -22,6 +22,9 @@ export default function mixinDom(maruo) {
         },
         position: function () {
             return position(this[0])
+        },
+        prop: function (name, val) {
+            return prop(this[0], name, val)
         },
         attr: function (name, val) {
             return attr(this[0], name, val)
