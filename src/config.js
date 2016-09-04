@@ -9,7 +9,7 @@ var closeTag = "}}"
 
 var safeOpenTag, safeCloseTag, rexpr, rexprg, rbind
 updateExp()
-
+    
 
 function updateExp(){
     safeOpenTag = escapeRegExp(openTag)

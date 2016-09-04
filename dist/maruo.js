@@ -84,16 +84,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _dom2 = _interopRequireDefault(_dom);
 	
-	var _directives = __webpack_require__(36);
+	var _ajax = __webpack_require__(36);
+	
+	var _ajax2 = _interopRequireDefault(_ajax);
+	
+	var _directives = __webpack_require__(38);
 	
 	var _directives2 = _interopRequireDefault(_directives);
 	
-	__webpack_require__(40);
+	__webpack_require__(42);
 	
 	_core2['default'](_maruo2['default']);
 	_vm2['default'](_maruo2['default']);
 	_event2['default'](_maruo2['default']);
 	_dom2['default'](_maruo2['default']);
+	_ajax2['default'](_maruo2['default']);
 	_directives2['default'](_maruo2['default']);
 	
 	exports['default'] = _maruo2['default'];
@@ -584,6 +589,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _dom = __webpack_require__(12);
 	
 	_defaults(exports, _interopExportWildcard(_dom, _defaults));
+	
+	var _mixin = __webpack_require__(44);
+	
+	_defaults(exports, _interopExportWildcard(_mixin, _defaults));
+	
+	var _querystring = __webpack_require__(45);
+	
+	_defaults(exports, _interopExportWildcard(_querystring, _defaults));
 
 /***/ },
 /* 8 */
@@ -1658,7 +1671,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _attr2 = __webpack_require__(33);
 	
-	var _val2 = __webpack_require__(34);
+	var _val2 = __webpack_require__(35);
 	
 	function mixinDom(maruo) {
 	    maruo.shadowCopy(maruo.fn, _css2.WH);
@@ -3116,7 +3129,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _support = __webpack_require__(35);
+	var _support = __webpack_require__(34);
 	
 	var _support2 = _interopRequireDefault(_support);
 	
@@ -3318,6 +3331,48 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
+	 * Created by cgspine on 16/8/13.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _browser = __webpack_require__(13);
+	
+	var _browser2 = _interopRequireDefault(_browser);
+	
+	var support = {};
+	
+	var input = _browser2['default'].document.createElement('input'),
+	    select = _browser2['default'].document.createElement("select"),
+	    opt = select.appendChild(_browser2['default'].document.createElement("option"));
+	input.type = "checkbox";
+	
+	// Support: Android <=4.3 only
+	// Default value for a checkbox should be "on"
+	support.checkOn = input.value !== "";
+	
+	// Support: IE <=11 only
+	// Must access selectedIndex to make default options select
+	support.optSelectedDefault = opt.selected;
+	
+	// Support: IE <=11 only
+	// An input loses its value after becoming a radio
+	input = _browser2['default'].document.createElement("input");
+	input.value = "t";
+	input.type = "radio";
+	support.radioValue = input.value === "t";
+	
+	exports['default'] = support;
+	module.exports = exports['default'];
+
+/***/ },
+/* 35 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
 	 * Created by cgspine on 16/8/9.
 	 */
 	'use strict';
@@ -3332,7 +3387,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _util = __webpack_require__(7);
 	
-	var _support = __webpack_require__(35);
+	var _support = __webpack_require__(34);
 	
 	var _support2 = _interopRequireDefault(_support);
 	
@@ -3453,49 +3508,114 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 35 */
+/* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
-	 * Created by cgspine on 16/8/13.
+	 * Created by cgspine on 16/9/4.
 	 */
 	'use strict';
 	
 	exports.__esModule = true;
+	exports['default'] = mixinAjax;
 	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	var _ajax = __webpack_require__(37);
 	
-	var _browser = __webpack_require__(13);
+	function mixinAjax(maruo) {
+	  maruo.ajax = _ajax.ajax;
+	}
 	
-	var _browser2 = _interopRequireDefault(_browser);
-	
-	var support = {};
-	
-	var input = _browser2['default'].document.createElement('input'),
-	    select = _browser2['default'].document.createElement("select"),
-	    opt = select.appendChild(_browser2['default'].document.createElement("option"));
-	input.type = "checkbox";
-	
-	// Support: Android <=4.3 only
-	// Default value for a checkbox should be "on"
-	support.checkOn = input.value !== "";
-	
-	// Support: IE <=11 only
-	// Must access selectedIndex to make default options select
-	support.optSelectedDefault = opt.selected;
-	
-	// Support: IE <=11 only
-	// An input loses its value after becoming a radio
-	input = _browser2['default'].document.createElement("input");
-	input.value = "t";
-	input.type = "radio";
-	support.radioValue = input.value === "t";
-	
-	exports['default'] = support;
 	module.exports = exports['default'];
 
 /***/ },
-/* 36 */
+/* 37 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/9/4.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	exports.ajax = ajax;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _util = __webpack_require__(7);
+	
+	var _domBrowser = __webpack_require__(13);
+	
+	var _domBrowser2 = _interopRequireDefault(_domBrowser);
+	
+	var _xhr = __webpack_require__(46);
+	
+	var _transports = __webpack_require__(47);
+	
+	var _transports2 = _interopRequireDefault(_transports);
+	
+	var defaults = {
+	    type: 'GET',
+	    contentType: "application/x-www-form-urlencoded; charset=UTF-8",
+	    async: true,
+	    jsonp: "callback"
+	};
+	
+	var rurl = /^([\w.+-]+:)(?:\/\/([^\/?#:]*)(?::(\d+)|)|)/,
+	    curl = _domBrowser2['default'].document.URL,
+	    segments = rurl.exec(curl.toLowerCase()) || [],
+	    rlocalProtocol = /^(?:about|app|app-storage|.+-extension|file|res|widget):$/,
+	    isLocal = rlocalProtocol.test(segments[1]),
+	    rnoContent = /^(?:GET|HEAD)$/,
+	    rhash = /#.*$/,
+	    rts = /([?&])_=[^&]*/,
+	    rprotocol = /^\/\//,
+	    rquery = /\?/;
+	
+	function ajax(opts) {
+	    if (!opts || !opts.url) {
+	        _util.err("argument must be object which has a property named url");
+	    }
+	    opts = setOptions(opts);
+	    var xhr = new _xhr.XHR(opts);
+	    'complete,success,error'.replace(_util.rword, function (name) {
+	        if (typeof opts[name] === 'function') {
+	            xhr.bind(name, opts[name]);
+	            delete opts[name];
+	        }
+	    });
+	    var dataType = opts.dataType; // 目标返回数据类型
+	    var name = opts.form ? 'upload' : dataType;
+	    var transport = _transports2['default'][name] || _transports2['default'].xhr;
+	}
+	
+	function setOptions(opts) {
+	    opts = _util.mixin({}, defaults, opts);
+	    if (typeof opts.crossDomain !== 'boolean') {
+	        // 是否跨域
+	        var parts = rurl.exec(opts.url.toLowerCase());
+	        opts.crossDomain = !!(parts && (parts[1] !== segments[1] || parts[2] !== segments[2] || (parts[3] || (parts[1] === 'http:' ? 80 : 443)) !== (segments[3] || (segments[1] === 'http:' ? 80 : 443))));
+	    }
+	    if (opts.data && typeof opts.data !== 'object') {
+	        _util.err('data must be a object');
+	    }
+	    var querystring = _util.param(opts.data);
+	    opts.querystring = querystring || '';
+	    opts.url = opts.url.replace(/#.*$/, '').replace(/^\/\//, segments[1] + '//');
+	    opts.type = opts.type.toUpperCase();
+	    opts.hasContent = !rnoContent.test(opts.type);
+	    if (!opts.hasContent) {
+	        if (querystring) {
+	            opts.url += (rquery.test(opts.url) ? '&' : '?') + querystring;
+	        }
+	        if (opts.cache === false) {
+	            opts.url += (rquery.test(opts.url) ? '&' : '?') + 'maruo_timestamp' + Date.now();
+	        }
+	    }
+	    return opts;
+	}
+
+/***/ },
+/* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -3509,15 +3629,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _expr = __webpack_require__(37);
+	var _expr = __webpack_require__(39);
 	
 	var _expr2 = _interopRequireDefault(_expr);
 	
-	var _text = __webpack_require__(38);
+	var _text = __webpack_require__(40);
 	
 	var _text2 = _interopRequireDefault(_text);
 	
-	var _controller = __webpack_require__(39);
+	var _controller = __webpack_require__(41);
 	
 	var _controller2 = _interopRequireDefault(_controller);
 	
@@ -3530,7 +3650,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 37 */
+/* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -3565,7 +3685,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 38 */
+/* 40 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -3609,7 +3729,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 39 */
+/* 41 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -3648,7 +3768,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 40 */
+/* 42 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -3657,10 +3777,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	'use strict';
 	
-	__webpack_require__(41);
+	__webpack_require__(43);
 
 /***/ },
-/* 41 */
+/* 43 */
 /***/ function(module, exports) {
 
 	/**
@@ -3680,6 +3800,265 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.push(el);
 	    }
 	};
+
+/***/ },
+/* 44 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/9/4.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	exports.mixin = mixin;
+	
+	var _const = __webpack_require__(3);
+	
+	function mixin(target, source) {
+	    var args = Array.slice.call(arguments),
+	        i = 1,
+	        key,
+	        ride = typeof args[args.length - 1] === 'boolean' ? args.pop() : true; // 如果最后参数是布尔，判定是否覆写同名属性
+	    if (args.length === 1) {
+	        target = this.window ? {} : this;
+	        i = 0;
+	    }
+	    while (source = args[i++]) {
+	        for (key in source) {
+	            if (_const.hasOwn.call(source, key) && (ride || !(key in target))) {
+	                target[key] = source[key];
+	            }
+	        }
+	    }
+	    return target;
+	}
+
+/***/ },
+/* 45 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/9/4.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	exports.param = param;
+	exports.deparam = deparam;
+	
+	var _is = __webpack_require__(9);
+	
+	var _log = __webpack_require__(11);
+	
+	var encode = encodeURIComponent,
+	    decode = decodeURIComponent,
+	    r20 = /%20/g;
+	
+	function param(json) {
+	    if (!_is.isPlainObject(json)) {
+	        return '';
+	    }
+	    var key,
+	        val,
+	        ret = [];
+	    for (key in json) {
+	        if (json.hasOwnProperty(key)) {
+	            val = json[key];
+	            key = encode(key);
+	            if (isValidParamValue(val)) {
+	                ret.push(key + '=' + encode(val + ''));
+	            } else if (Array.isArray(val) && val.length > 0) {
+	                for (var i = 0, n = val.length; i < n; i++) {
+	                    if (isValidParamValue(val[i])) {
+	                        ret.push('' + key + encode('[]') + '=' + encode(val[i] + ''));
+	                    }
+	                }
+	            }
+	        }
+	    }
+	    return ret.join('&').replace(r20, '+');
+	}
+	
+	function deparam(url) {
+	    var json = {};
+	    if (!url || _is.type(url) !== 'string') {
+	        return json;
+	    }
+	    url = url.replace(/^[^?=]*\?]/ig, '').split('#')[0]; // remove host and hash
+	    var pairs = url.split('&'),
+	        pair,
+	        i = 0,
+	        len = pairs.length,
+	        key,
+	        val;
+	    for (; i < len; i++) {
+	        pair = pairs[i].split('=');
+	        key = decode(pair[0]);
+	        // http://stackoverflow.com/questions/28063750/decodeuricomponent-throwing-an-error-uri-malformed
+	        // http://www.ecma-international.org/ecma-262/5.1/#sec-15.1.3.2
+	        // The decodeURIComponent function computes a new version of a URI in which each escape sequence and UTF-8
+	        // encoding of the sort that might be introduced by the encodeURIComponent function
+	        // is replaced with the character that it represent
+	        try {
+	            val = decode(pair[1] || '');
+	        } catch (e) {
+	            _log.log(e + 'decodeURIComponent error : ' + pair[1]);
+	            val = pair[1] || '';
+	        }
+	        key = key.replace(/\[\]$/, ""); //如果参数名以[]结尾，则当作数组
+	        var item = json[key];
+	        if (item === void 0) {
+	            json[key] = val; //第一次
+	        } else if (Array.isArray(item)) {
+	                item.push(val); //第三次或三次以上
+	            } else {
+	                    json[key] = [item, val]; //第二次,将它转换为数组
+	                }
+	    }
+	    return json;
+	}
+	
+	function isValidParamValue(val) {
+	    var t = typeof val; // If the type of val is null, undefined, number, string, boolean, return true.
+	    return val == null || t !== 'object' && t !== 'function';
+	}
+
+/***/ },
+/* 46 */
+/***/ function(module, exports) {
+
+	/**
+	 * Created by cgspine on 16/9/4.
+	 */
+	
+	'use strict';
+	
+	exports.__esModule = true;
+	exports.getRealXhr = getRealXhr;
+	exports.XHR = XHR;
+	
+	function getRealXhr() {
+	    try {
+	        return new window.XMLHttpRequest();
+	    } catch (e) {}
+	}
+	
+	var uniqueId = 1;
+	
+	var rheaders = /^(.*?):[ \t]*([^\r\n]*)$/mg;
+	
+	function XHR(opts) {
+	    this._events = {};
+	    this.opts = opts || {};
+	
+	    this.responseHeadersString = '';
+	    this.responseHeaders = {};
+	    this.requestHeaders = {};
+	    this.querystring = this.opts.querystring;
+	    this.readyState = 0;
+	    this.uniqueId = uniqueId++;
+	    this.status = 0;
+	    this.addEventListener = this.bind;
+	    this.removeEventListener = this.unbind;
+	}
+	
+	XHR.prototype = {
+	    constructor: XHR,
+	
+	    setRequestHeader: function setRequestHeader(name, value) {
+	        this.requestHeaders[name] = value;
+	        return this;
+	    },
+	    getAllResponseHeaders: function getAllResponseHeaders() {
+	        return this.readyState === 4 ? this.responseHeadersString : null;
+	    },
+	    getResponseHeader: function getResponseHeader(name, match) {
+	        if (this.readyState === 4) {
+	            while (match = rheaders.exec(this.responseHeadersString)) {
+	                this.responseHeaders[match[1]] = match[2];
+	            }
+	            match = this.responseHeaders[name];
+	        }
+	        return match === void 0 ? null : match;
+	    },
+	    overrideMimeType: function overrideMimeType(type) {
+	        this.mimeType = type;
+	        return this;
+	    },
+	    abort: function abort(statusText) {
+	        statusText = statusText || 'abort';
+	        if (this.transport) {
+	            this.response(0, statusText);
+	        }
+	        return this;
+	    },
+	
+	    bind: function bind(type, callback) {
+	        var listeners = this._events[type];
+	        if (listeners) {
+	            listeners.push(callback);
+	        } else {
+	            this._events[type] = [callback];
+	        }
+	        return this;
+	    },
+	    unbind: function unbind(type, callback) {
+	        var n = arguments.length;
+	        if (n === 0) {
+	            this._events = {};
+	        } else if (n === 1) {
+	            this._events[type] = [];
+	        } else {
+	            var listeners = this._events[type] || [],
+	                i = listeners.length;
+	            while (--i >= 0) {
+	                if (listeners[i] === callback) {
+	                    listeners.splice(i, 1);
+	                    break;
+	                }
+	            }
+	        }
+	        return this;
+	    },
+	    once: function once(type, callback) {
+	        var self = this;
+	        var wrapper = function wrapper() {
+	            callback.apply(self, arguments);
+	            self.unbind(type, wrapper);
+	        };
+	        this.bind(type, wrapper);
+	        return this;
+	    },
+	    fire: function fire(type) {
+	        var listeners = (this._events[type] || []).concat(); // 防止影响原数组
+	        if (listeners.length) {
+	            var args = Array.prototype.slice.call(arguments, 1);
+	            for (var i = 0, callback; callback = listeners[i++];) {
+	                callback.apply(this, args);
+	            }
+	        }
+	    },
+	    toString: function toString() {
+	        return '[object XHR]';
+	    }
+	};
+
+/***/ },
+/* 47 */
+/***/ function(module, exports) {
+
+	/**
+	 * Created by cgspine on 16/9/4.
+	 */
+	
+	"use strict";
+	
+	exports.__esModule = true;
+	exports["default"] = {
+	    xhr: {}
+	};
+	module.exports = exports["default"];
 
 /***/ }
 /******/ ])
