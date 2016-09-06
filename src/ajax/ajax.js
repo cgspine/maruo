@@ -3,15 +3,24 @@
  */
 import { err, mixin, param, rword } from '../util'
 import browser from '../dom/browser'
-import { getRealXhr, XHR} from './xhr'
+import { XHR } from './xhr'
 import transports from './transports'
 
-const defaults = {
-    type: 'GET',
-    contentType: "application/x-www-form-urlencoded; charset=UTF-8",
-    async: true,
-    jsonp: "callback"
-}
+const
+    defaults = {
+        type: 'GET',
+        contentType: "application/x-www-form-urlencoded; charset=UTF-8",
+        async: true,
+        jsonp: "callback"
+    },
+    accepts = {
+        xml: "application/xml, text/xml",
+        html: "text/html",
+        text: "text/plain",
+        json: "application/json, text/javascript",
+        script: "text/javascript, application/javascript",
+        "*": ["*/"] + ["*"] //避免被压缩掉
+    }
 
 const rurl = /^([\w.+-]+:)(?:\/\/([^\/?#:]*)(?::(\d+)|)|)/,
     curl = browser.document.URL,
@@ -40,7 +49,28 @@ export function ajax(opts) {
     var dataType = opts.dataType // 目标返回数据类型
     var name = opts.form ? 'upload': dataType
     var transport = transports[name] || transports.xhr
-    
+    mixin(xhr, transport)
+    if (xhr.preprocess) {
+       dataType = xhr.preprocess || dataType
+    }
+    // 设置首部
+    if (opts.contentType) {
+      xhr.setRequestHeader('Content-Type', opts.contentType)
+    }
+    xhr.setRequestHeader("Accept", accepts[dataType] ? accepts[dataType] + ", */*; q=0.01" : accepts["*"])
+    for(var i in opts.headers){
+        xhr.setRequestHeader(i, opts.headers[i])
+    }
+    // 处理超时
+    if (opts.async && opts.timeout > 0) {
+        xhr.timeoutId = setTimeout(function () {
+            xhr.abort("timeout")
+        }, opts.timeoutId)
+    }
+
+    // request
+    xhr.request()
+    return xhr
 }
 
 function setOptions(opts) {
