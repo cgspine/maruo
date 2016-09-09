@@ -4,7 +4,7 @@
 import { hasOwn } from './const'
 
 export function mixin(target, source) {
-    var args = Array.slice.call(arguments),
+    var args = Array.prototype.slice.call(arguments),
         i = 1,
         key,
         ride = typeof args[args.length - 1] === 'boolean' ? args.pop() : true // 如果最后参数是布尔，判定是否覆写同名属性

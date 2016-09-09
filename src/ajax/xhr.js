@@ -51,12 +51,14 @@ XHR.prototype = {
         this.mimeType = type
         return this
     },
-    abort: function (statusText) {
-        statusText = statusText || 'abort'
-        if (this.transport) {
-            this.response(0, statusText)
-        }
+    abort: function () {
+        this.respond('abort')
         return this
+    },
+
+    dispatch(status, statusText){
+        console.log(status)
+        console.log(statusText)
     },
     
     bind: function (type, callback) {

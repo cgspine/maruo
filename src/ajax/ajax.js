@@ -6,12 +6,21 @@ import browser from '../dom/browser'
 import { XHR } from './xhr'
 import transports from './transports'
 
-const
+const rurl = /^([\w.+-]+:)(?:\/\/([^\/?#:]*)(?::(\d+)|)|)/,
+    curl = browser.document.URL,
+    segments = rurl.exec(curl.toLowerCase()) || [],
+    rlocalProtocol = /^(?:about|app|app-storage|.+-extension|file|res|widget):$/,
+    rnoContent = /^(?:GET|HEAD)$/,
+    rhash = /#.*$/,
+    rts = /([?&])_=[^&]*/,
+    rprotocol = /^\/\//,
+    rquery = /\?/,
     defaults = {
         type: 'GET',
         contentType: "application/x-www-form-urlencoded; charset=UTF-8",
         async: true,
-        jsonp: "callback"
+        jsonp: "callback",
+        isLocal: rlocalProtocol.test(segments[1])
     },
     accepts = {
         xml: "application/xml, text/xml",
@@ -21,17 +30,6 @@ const
         script: "text/javascript, application/javascript",
         "*": ["*/"] + ["*"] //避免被压缩掉
     }
-
-const rurl = /^([\w.+-]+:)(?:\/\/([^\/?#:]*)(?::(\d+)|)|)/,
-    curl = browser.document.URL,
-    segments = rurl.exec(curl.toLowerCase()) || [],
-    rlocalProtocol = /^(?:about|app|app-storage|.+-extension|file|res|widget):$/,
-    isLocal = rlocalProtocol.test(segments[1]),
-    rnoContent = /^(?:GET|HEAD)$/,
-    rhash = /#.*$/,
-    rts = /([?&])_=[^&]*/,
-    rprotocol = /^\/\//,
-    rquery = /\?/
 
 
 export function ajax(opts) {
