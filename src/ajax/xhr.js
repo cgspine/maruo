@@ -1,6 +1,7 @@
 /**
  * Created by cgspine on 16/9/4.
  */
+import converters from './converters'
 
 export function getRealXhr() {
     try {
@@ -57,8 +58,47 @@ XHR.prototype = {
     },
 
     dispatch(status, statusText){
-        console.log(status)
-        console.log(statusText)
+        if(!this.fetcher){
+            return
+        }
+        this.readyState = 4
+        var eventType= 'error'
+        if (status >= 200 && status < 300 || status === 304) {
+            eventType = 'success'
+            if (status === 204) {
+               statusText = 'no content'
+            } else if (status === 304) {
+                statusText = 'not modified'
+            } else {
+                if (typeof this.response === 'undefined') {
+                    var dataType = this.opts.dataType || this.opts.mimeType
+                    if (!dataType) {
+                        dataType = this.getResponseHeader('Content-Type') || ''
+                        dataType = dataType.match(/json|xml|xml|script|html/) || ['text']
+                        dataType = dataType[0]
+                    }
+                    try {
+                        this.response = converters[dataType].call(this, this.responseText, this.responseXML)
+                    } catch (e) {
+                        eventType = 'error'
+                        statusText = 'parser error: ' + e
+                    }
+                }
+            }
+        }
+        this.status = status
+        this.statusText = statusText
+        if (this.timeoutId) {
+            clearTimeout(this.timeoutId)
+            delete this.timeoutId
+        }
+        if (eventType === 'success') {
+            this.fire(eventType, this.response, statusText, this)
+        } else {
+            this.fire(eventType, this, statusText)
+        }
+        this.fire('complete', this, statusText)
+        delete  this.fetcher
     },
     
     bind: function (type, callback) {

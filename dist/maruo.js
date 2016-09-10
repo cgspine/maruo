@@ -3768,17 +3768,22 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 40 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Created by cgspine on 16/9/4.
 	 */
-	
 	'use strict';
 	
 	exports.__esModule = true;
 	exports.getRealXhr = getRealXhr;
 	exports.XHR = XHR;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _converters = __webpack_require__(49);
+	
+	var _converters2 = _interopRequireDefault(_converters);
 	
 	function getRealXhr() {
 	    try {
@@ -3834,8 +3839,47 @@ return /******/ (function(modules) { // webpackBootstrap
 	    },
 	
 	    dispatch: function dispatch(status, statusText) {
-	        console.log(status);
-	        console.log(statusText);
+	        if (!this.fetcher) {
+	            return;
+	        }
+	        this.readyState = 4;
+	        var eventType = 'error';
+	        if (status >= 200 && status < 300 || status === 304) {
+	            eventType = 'success';
+	            if (status === 204) {
+	                statusText = 'no content';
+	            } else if (status === 304) {
+	                statusText = 'not modified';
+	            } else {
+	                if (typeof this.response === 'undefined') {
+	                    var dataType = this.opts.dataType || this.opts.mimeType;
+	                    if (!dataType) {
+	                        dataType = this.getResponseHeader('Content-Type') || '';
+	                        dataType = dataType.match(/json|xml|xml|script|html/) || ['text'];
+	                        dataType = dataType[0];
+	                    }
+	                    try {
+	                        this.response = _converters2['default'][dataType].call(this, this.responseText, this.responseXML);
+	                    } catch (e) {
+	                        eventType = 'error';
+	                        statusText = 'parser error: ' + e;
+	                    }
+	                }
+	            }
+	        }
+	        this.status = status;
+	        this.statusText = statusText;
+	        if (this.timeoutId) {
+	            clearTimeout(this.timeoutId);
+	            delete this.timeoutId;
+	        }
+	        if (eventType === 'success') {
+	            this.fire(eventType, this.response, statusText, this);
+	        } else {
+	            this.fire(eventType, this, statusText);
+	        }
+	        this.fire('complete', this, statusText);
+	        delete this.fetcher;
 	    },
 	
 	    bind: function bind(type, callback) {
@@ -4248,6 +4292,113 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.push(el);
 	    }
 	};
+
+/***/ },
+/* 49 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/9/10.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _parserXml = __webpack_require__(50);
+	
+	var _parserXml2 = _interopRequireDefault(_parserXml);
+	
+	var _parserHtml = __webpack_require__(51);
+	
+	var _parserHtml2 = _interopRequireDefault(_parserHtml);
+	
+	var _parserScript = __webpack_require__(52);
+	
+	var _parserScript2 = _interopRequireDefault(_parserScript);
+	
+	var _maruo = __webpack_require__(1);
+	
+	var _maruo2 = _interopRequireDefault(_maruo);
+	
+	exports['default'] = {
+	    text: function text(_text) {
+	        return _text || '';
+	    },
+	    xml: function xml(text, _xml) {
+	        return _xml !== void 0 ? _xml : _parserXml2['default'](text);
+	    },
+	    html: function html(text) {
+	        _parserHtml2['default'](text);
+	    },
+	    json: function json(text) {
+	        return JSON.parse(text);
+	    },
+	    script: function script(text) {
+	        return _parserScript2['default'](text);
+	    },
+	    jsonp: function jsonp() {
+	        var json = _maruo2['default'][this.jsonpCallback];
+	        delete _maruo2['default'][this.jsonpCallback];
+	        return json;
+	    }
+	};
+	module.exports = exports['default'];
+
+/***/ },
+/* 50 */
+/***/ function(module, exports) {
+
+	/**
+	 * Created by cgspine on 16/9/10.
+	 */
+	
+	"use strict";
+	
+	exports.__esModule = true;
+	
+	exports["default"] = function (text) {
+	  return text;
+	};
+	
+	module.exports = exports["default"];
+
+/***/ },
+/* 51 */
+/***/ function(module, exports) {
+
+	/**
+	 * Created by cgspine on 16/9/10.
+	 */
+	
+	"use strict";
+	
+	exports.__esModule = true;
+	
+	exports["default"] = function (text) {
+	  return text;
+	};
+	
+	module.exports = exports["default"];
+
+/***/ },
+/* 52 */
+/***/ function(module, exports) {
+
+	/**
+	 * Created by cgspine on 16/9/10.
+	 */
+	
+	"use strict";
+	
+	exports.__esModule = true;
+	
+	exports["default"] = function (text) {
+	  return text;
+	};
+	
+	module.exports = exports["default"];
 
 /***/ }
 /******/ ])
