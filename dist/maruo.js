@@ -88,11 +88,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _ajax2 = _interopRequireDefault(_ajax);
 	
-	var _directives = __webpack_require__(43);
+	var _directives = __webpack_require__(48);
 	
 	var _directives2 = _interopRequireDefault(_directives);
 	
-	__webpack_require__(47);
+	__webpack_require__(52);
 	
 	_core2['default'](_maruo2['default']);
 	_vm2['default'](_maruo2['default']);
@@ -3672,7 +3672,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _xhr = __webpack_require__(40);
 	
-	var _transports = __webpack_require__(41);
+	var _transports = __webpack_require__(45);
 	
 	var _transports2 = _interopRequireDefault(_transports);
 	
@@ -3718,7 +3718,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var transport = _transports2['default'][name] || _transports2['default'].xhr;
 	    _util.mixin(xhr, transport);
 	    if (xhr.preprocess) {
-	        dataType = xhr.preprocess || dataType;
+	        dataType = xhr.preprocess() || dataType;
 	    }
 	    // 设置首部
 	    if (opts.contentType) {
@@ -3781,7 +3781,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _converters = __webpack_require__(49);
+	var _converters = __webpack_require__(41);
 	
 	var _converters2 = _interopRequireDefault(_converters);
 	
@@ -3937,6 +3937,113 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
+	 * Created by cgspine on 16/9/10.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _parserXml = __webpack_require__(42);
+	
+	var _parserXml2 = _interopRequireDefault(_parserXml);
+	
+	var _parserHtml = __webpack_require__(43);
+	
+	var _parserHtml2 = _interopRequireDefault(_parserHtml);
+	
+	var _parserScript = __webpack_require__(44);
+	
+	var _parserScript2 = _interopRequireDefault(_parserScript);
+	
+	var _maruo = __webpack_require__(1);
+	
+	var _maruo2 = _interopRequireDefault(_maruo);
+	
+	exports['default'] = {
+	    text: function text(_text) {
+	        return _text || '';
+	    },
+	    xml: function xml(text, _xml) {
+	        return _xml !== void 0 ? _xml : _parserXml2['default'](text);
+	    },
+	    html: function html(text) {
+	        _parserHtml2['default'](text);
+	    },
+	    json: function json(text) {
+	        return JSON.parse(text);
+	    },
+	    script: function script(text) {
+	        return _parserScript2['default'](text);
+	    },
+	    jsonp: function jsonp() {
+	        var json = _maruo2['default'][this.jsonpCallback];
+	        delete _maruo2['default'][this.jsonpCallback];
+	        return json;
+	    }
+	};
+	module.exports = exports['default'];
+
+/***/ },
+/* 42 */
+/***/ function(module, exports) {
+
+	/**
+	 * Created by cgspine on 16/9/10.
+	 */
+	
+	"use strict";
+	
+	exports.__esModule = true;
+	
+	exports["default"] = function (text) {
+	  return text;
+	};
+	
+	module.exports = exports["default"];
+
+/***/ },
+/* 43 */
+/***/ function(module, exports) {
+
+	/**
+	 * Created by cgspine on 16/9/10.
+	 */
+	
+	"use strict";
+	
+	exports.__esModule = true;
+	
+	exports["default"] = function (text) {
+	  return text;
+	};
+	
+	module.exports = exports["default"];
+
+/***/ },
+/* 44 */
+/***/ function(module, exports) {
+
+	/**
+	 * Created by cgspine on 16/9/10.
+	 */
+	
+	"use strict";
+	
+	exports.__esModule = true;
+	
+	exports["default"] = function (text) {
+	  return text;
+	};
+	
+	module.exports = exports["default"];
+
+/***/ },
+/* 45 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
 	 * Created by cgspine on 16/9/4.
 	 */
 	
@@ -3946,22 +4053,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _xhr = __webpack_require__(42);
+	var _xhr = __webpack_require__(46);
 	
 	var _xhr2 = _interopRequireDefault(_xhr);
 	
-	var _script = __webpack_require__(53);
+	var _script = __webpack_require__(47);
 	
 	var _script2 = _interopRequireDefault(_script);
 	
+	var _jsonp = __webpack_require__(54);
+	
+	var _jsonp2 = _interopRequireDefault(_jsonp);
+	
 	exports['default'] = {
-	  xhr: _xhr2['default'],
-	  script: _script2['default']
+	    xhr: _xhr2['default'],
+	    script: _script2['default'],
+	    jsonp: _jsonp2['default']
 	};
 	module.exports = exports['default'];
 
 /***/ },
-/* 42 */
+/* 46 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -4112,7 +4224,70 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 43 */
+/* 47 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/9/10.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _domBrowser = __webpack_require__(13);
+	
+	var _domBrowser2 = _interopRequireDefault(_domBrowser);
+	
+	var _maruo = __webpack_require__(1);
+	
+	var _maruo2 = _interopRequireDefault(_maruo);
+	
+	exports['default'] = {
+	    request: function request() {
+	        var opts = this.opts;
+	        var self = this;
+	        var node = this.fetcher = _domBrowser2['default'].document.createElement('script');
+	        if (opts.charset) {
+	            node.charset = opts.charset;
+	        }
+	        node.onerror = function () {
+	            self.respond('error');
+	        };
+	        node.onload = function () {
+	            self.respond();
+	        };
+	        node.src = opts.url;
+	        _domBrowser2['default'].document.head.appendChild(node);
+	    },
+	    respond: function respond(type) {
+	        var node = this.fetcher;
+	        if (!node) {
+	            return;
+	        }
+	        node.onerror = node.onload = null;
+	        var parent = node.parentNode;
+	        if (parent) {
+	            parent.removeChild(node);
+	        }
+	        // abort就什么都不做了
+	        if (type === 'error') {
+	            this.dispatch(404, 'error');
+	        } else if (type !== 'abort') {
+	            if (typeof _maruo2['default'][this.jsonpCallback] == 'function') {
+	                // jsonp返回时复写maruo[this.jsonpCallback]为json，如果还是function,则说明jsonp出错
+	                this.dispatch(500, 'error');
+	            } else {
+	                this.dispatch(200, 'success');
+	            }
+	        }
+	    }
+	};
+	module.exports = exports['default'];
+
+/***/ },
+/* 48 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -4126,15 +4301,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _expr = __webpack_require__(44);
+	var _expr = __webpack_require__(49);
 	
 	var _expr2 = _interopRequireDefault(_expr);
 	
-	var _text = __webpack_require__(45);
+	var _text = __webpack_require__(50);
 	
 	var _text2 = _interopRequireDefault(_text);
 	
-	var _controller = __webpack_require__(46);
+	var _controller = __webpack_require__(51);
 	
 	var _controller2 = _interopRequireDefault(_controller);
 	
@@ -4147,7 +4322,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 44 */
+/* 49 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -4182,7 +4357,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 45 */
+/* 50 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -4226,7 +4401,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 46 */
+/* 51 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -4265,7 +4440,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 47 */
+/* 52 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -4274,10 +4449,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	'use strict';
 	
-	__webpack_require__(48);
+	__webpack_require__(53);
 
 /***/ },
-/* 48 */
+/* 53 */
 /***/ function(module, exports) {
 
 	/**
@@ -4299,7 +4474,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 49 */
+/* 54 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -4311,152 +4486,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _parserXml = __webpack_require__(50);
+	var _script = __webpack_require__(47);
 	
-	var _parserXml2 = _interopRequireDefault(_parserXml);
+	var _script2 = _interopRequireDefault(_script);
 	
-	var _parserHtml = __webpack_require__(51);
-	
-	var _parserHtml2 = _interopRequireDefault(_parserHtml);
-	
-	var _parserScript = __webpack_require__(52);
-	
-	var _parserScript2 = _interopRequireDefault(_parserScript);
+	var _util = __webpack_require__(7);
 	
 	var _maruo = __webpack_require__(1);
 	
 	var _maruo2 = _interopRequireDefault(_maruo);
 	
-	exports['default'] = {
-	    text: function text(_text) {
-	        return _text || '';
-	    },
-	    xml: function xml(text, _xml) {
-	        return _xml !== void 0 ? _xml : _parserXml2['default'](text);
-	    },
-	    html: function html(text) {
-	        _parserHtml2['default'](text);
-	    },
-	    json: function json(text) {
-	        return JSON.parse(text);
-	    },
-	    script: function script(text) {
-	        return _parserScript2['default'](text);
-	    },
-	    jsonp: function jsonp() {
-	        var json = _maruo2['default'][this.jsonpCallback];
-	        delete _maruo2['default'][this.jsonpCallback];
-	        return json;
-	    }
-	};
-	module.exports = exports['default'];
-
-/***/ },
-/* 50 */
-/***/ function(module, exports) {
-
-	/**
-	 * Created by cgspine on 16/9/10.
-	 */
+	var uuid = 0;
+	var rquery = /\?/;
 	
-	"use strict";
-	
-	exports.__esModule = true;
-	
-	exports["default"] = function (text) {
-	  return text;
-	};
-	
-	module.exports = exports["default"];
-
-/***/ },
-/* 51 */
-/***/ function(module, exports) {
-
-	/**
-	 * Created by cgspine on 16/9/10.
-	 */
-	
-	"use strict";
-	
-	exports.__esModule = true;
-	
-	exports["default"] = function (text) {
-	  return text;
-	};
-	
-	module.exports = exports["default"];
-
-/***/ },
-/* 52 */
-/***/ function(module, exports) {
-
-	/**
-	 * Created by cgspine on 16/9/10.
-	 */
-	
-	"use strict";
-	
-	exports.__esModule = true;
-	
-	exports["default"] = function (text) {
-	  return text;
-	};
-	
-	module.exports = exports["default"];
-
-/***/ },
-/* 53 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Created by cgspine on 16/9/10.
-	 */
-	'use strict';
-	
-	exports.__esModule = true;
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	var _domBrowser = __webpack_require__(13);
-	
-	var _domBrowser2 = _interopRequireDefault(_domBrowser);
-	
-	exports['default'] = {
-	    request: function request() {
+	var jsonp = {
+	    preprocess: function preprocess() {
 	        var opts = this.opts;
-	        var self = this;
-	        var node = this.fetcher = _domBrowser2['default'].document.createElement('script');
-	        if (opts.charset) {
-	            node.charset = opts.charset;
-	        }
-	        node.onerror = function () {
-	            self.respond('error');
+	        var name = this.jsonpCallback = opts.jsonpCallback || 'ajax_jsonp_' + uuid++;
+	        opts.url = opts.url + (rquery.test(opts.url) ? "&" : "?") + opts.jsonp + "=" + "maruo." + name;
+	        //将后台返回的json保存在惰性函数中
+	        _maruo2['default'][name] = function (json) {
+	            _maruo2['default'][name] = json;
 	        };
-	        node.onload = function () {
-	            self.respond();
-	        };
-	        node.src = opts.url;
-	        _domBrowser2['default'].document.head.appendChild(node);
-	    },
-	    respond: function respond(type) {
-	        var node = this.fetcher;
-	        if (!node) {
-	            return;
-	        }
-	        node.onerror = node.onload = null;
-	        var parent = node.parentNode;
-	        if (parent) {
-	            parent.removeChild(node);
-	        }
-	        // abort就什么都不做了
-	        if (type === 'error') {
-	            this.dispatch(404, 'error');
-	        } else if (type !== 'abort') {
-	            this.dispatch(200, 'success');
-	        }
+	        return "script";
 	    }
 	};
+	_util.mixin(jsonp, _script2['default']);
+	
+	exports['default'] = jsonp;
 	module.exports = exports['default'];
 
 /***/ }

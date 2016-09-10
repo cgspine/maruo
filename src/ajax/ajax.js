@@ -49,7 +49,7 @@ export function ajax(opts) {
     var transport = transports[name] || transports.xhr
     mixin(xhr, transport)
     if (xhr.preprocess) {
-       dataType = xhr.preprocess || dataType
+       dataType = xhr.preprocess() || dataType
     }
     // 设置首部
     if (opts.contentType) {

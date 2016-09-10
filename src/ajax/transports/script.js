@@ -2,6 +2,7 @@
  * Created by cgspine on 16/9/10.
  */
 import browser from '../../dom/browser'
+import maruo from '../../maruo'
 
 export default {
     request: function () {
@@ -34,7 +35,13 @@ export default {
         if(type === 'error'){
             this.dispatch(404, 'error')
         } else if (type !== 'abort'){
-            this.dispatch(200, 'success')
+            if(typeof maruo[this.jsonpCallback] == 'function'){
+                // jsonp返回时复写maruo[this.jsonpCallback]为json，如果还是function,则说明jsonp出错
+                this.dispatch(500, 'error')
+            }else{
+                this.dispatch(200, 'success')
+            }
+
         }
     }
 }

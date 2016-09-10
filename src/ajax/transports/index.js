@@ -4,8 +4,10 @@
 
 import xhr from './xhr'
 import script from './script'
+import jsonp from './jsonp'
 
 export default {
     xhr: xhr,
-    script: script
+    script: script,
+    jsonp: jsonp
 }
