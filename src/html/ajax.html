@@ -7,9 +7,24 @@
 <body>
     <script src="../../dist/maruo.js"></script>
     <script>
+//        maruo.ajax({
+//            type: 'get',
+//            url: 'http://localhost:63343/maruo/src/html/attr.html?_ijt=56elts5d4428qi966fl3m7bllf',
+//            success: function (data) {
+//                console.log(data)
+//            },
+//            error: function () {
+//                console.log('error')
+//            },
+//            complete: function () {
+//                console.log('complete')
+//            }
+//        })
+
         maruo.ajax({
             type: 'get',
-            url: 'http://localhost:63343/maruo/src/html/attr.html?_ijt=56elts5d4428qi966fl3m7bllf',
+            url: 'http://localhost:63343/maruo/src/html/test.js',
+            dataType: 'script',
             success: function (data) {
                 console.log(data)
             },

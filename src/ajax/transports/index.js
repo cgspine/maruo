@@ -3,7 +3,9 @@
  */
 
 import xhr from './xhr'
+import script from './script'
 
 export default {
-    xhr: xhr
+    xhr: xhr,
+    script: script
 }
