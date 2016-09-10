@@ -5,9 +5,11 @@
 import xhr from './xhr'
 import script from './script'
 import jsonp from './jsonp'
+import upload from './upload'
 
 export default {
     xhr: xhr,
     script: script,
-    jsonp: jsonp
+    jsonp: jsonp,
+    upload: upload
 }

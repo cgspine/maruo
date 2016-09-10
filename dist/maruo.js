@@ -4065,10 +4065,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _jsonp2 = _interopRequireDefault(_jsonp);
 	
+	var _upload = __webpack_require__(55);
+	
+	var _upload2 = _interopRequireDefault(_upload);
+	
 	exports['default'] = {
 	    xhr: _xhr2['default'],
 	    script: _script2['default'],
-	    jsonp: _jsonp2['default']
+	    jsonp: _jsonp2['default'],
+	    upload: _upload2['default']
 	};
 	module.exports = exports['default'];
 
@@ -4514,6 +4519,40 @@ return /******/ (function(modules) { // webpackBootstrap
 	_util.mixin(jsonp, _script2['default']);
 	
 	exports['default'] = jsonp;
+	module.exports = exports['default'];
+
+/***/ },
+/* 55 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by cgspine on 16/9/10.
+	 */
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _util = __webpack_require__(7);
+	
+	var _xhr = __webpack_require__(46);
+	
+	var _xhr2 = _interopRequireDefault(_xhr);
+	
+	var upload = {
+	    proprecess: function proprecess() {
+	        var opts = this.opts;
+	        var formdata = new FormData(opts.form);
+	        _util.each(opts.data, function (key, val) {
+	            formdata.append(key, val);
+	        });
+	        this.formdata = formdata;
+	    }
+	};
+	_util.mixin(upload, _xhr2['default']);
+	
+	exports['default'] = upload;
 	module.exports = exports['default'];
 
 /***/ }
