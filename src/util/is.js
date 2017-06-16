@@ -2,10 +2,7 @@
  * Created by cgspine on 16/7/14.
  */
 
-import { 
-    rword,
-    toString
-} from './const'
+import {rword, toString} from "./const";
 
 var rwindow = /^\[object (?:Window|DOMWindow|global)\]$/
 var rarraylike = /(Array|List|Collection|Map|Arguments)\]$/
@@ -19,8 +16,8 @@ export function type(obj) {
     if (obj == null) {
         return String(obj)
     }
-    return typeof obj === 'object' || typeof obj === 'function' ?  
-    class2type[toString.call(obj)] || 'object' : 
+    return typeof obj === 'object' || typeof obj === 'function' ?
+        class2type[toString.call(obj)] || 'object' :
         typeof obj
 }
 
@@ -33,7 +30,7 @@ export function isWinodow(win) {
 }
 
 export function isPlainObject(obj) {
-    return toString.call(obj) === '[object Object]' && 
+    return toString.call(obj) === '[object Object]' &&
         Object.getPrototypeOf(obj) === Object.prototype
 }
 
@@ -48,4 +45,15 @@ export function isArrayLike(obj) {
         }
     }
     return false
+}
+
+export function isEmptyObject(obj) {
+    /* eslint-disable no-unused-vars */
+    // See https://github.com/eslint/eslint/issues/6125
+    var name;
+
+    for (name in obj) {
+        return false;
+    }
+    return true;
 }
