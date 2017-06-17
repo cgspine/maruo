@@ -1,4 +1,8 @@
-'use strict';
+(function (global, factory) {
+	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+	typeof define === 'function' && define.amd ? define(factory) :
+	(global.maruo = factory());
+}(this, (function () { 'use strict';
 
 /**
  * Created by cgspine on 16/7/23.
@@ -1362,12 +1366,42 @@ function mixinEvent(maruo) {
         teardown(el, type$$1);
     };
 
+    maruo.trigger = function (el, event) {
+        var data = maruo.data.cache(el),
+            parent = el.parentNode || el.ownerDocument;
+        if (typeof event === 'string') {
+            event = { type: event, target: el };
+        }
+        event = fixEvent(event);
+        if (data.dispatcher) {
+            data.dispatcher(event);
+        }
+
+        if (parent && !event.isPropagationStopped) {
+            maruo.trigger(parent, event);
+        } else if (!parent && !event.isDefaultPrevented) {
+            // 冒泡结束后，如果有浏览器默认事件并且没有调用event.preventDefault，则触发浏览器默认事件
+            var target = event.target,
+                type$$1 = event.type,
+                targetData = maruo.data.cache(target);
+            if (target[type$$1]) {
+                targetData.disabled = true;
+                target[type$$1]();
+                targetData.disabled = false;
+            }
+        }
+    };
+
     maruo.prototype.on = function (type$$1, fn) {
         maruo.on(this[0], type$$1, fn);
     };
 
     maruo.prototype.off = function (type$$1, fn) {
         maruo.off(this[0], type$$1, fn);
+    };
+
+    maruo.prototype.trigger = function (event) {
+        maruo.trigger(this[0], event);
     };
 }
 
@@ -2247,6 +2281,9 @@ var scan$1 = function (els, maruo) {
 /**
  * Created by cgspine on 16/8/2.
  */
+/*********************************************************************
+ *                        CSS Hooks                                  *
+ *********************************************************************/
 var cssHooks = {
     "@:set": function (node, name, value) {
         node.style[name] = value;
@@ -2550,11 +2587,6 @@ function camlizeStyleName(str) {
     return camelize(str.replace(/^-ms-/, 'ms-'));
 }
 
-/**
- * 将驼峰式styleName转换为中划线式
- * eg:backgroundColor=>background-color; MozTransition => -moz-transition; msTransition => -ms-transition
- * @param str
- */
 function css(el, name, value) {
     if (el.nodeType !== 1) {
         return;
@@ -3589,4 +3621,6 @@ mixinDom(maruo$1);
 mixinAjax(maruo$1);
 mixinDirectives(maruo$1);
 
-module.exports = maruo$1;
+return maruo$1;
+
+})));

@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <title>测试Event</title>
     <style>
-        div{
-            width: 100px;
-            height: 50px;
+        div {
+            width: 500px;
+            height: 80px;
             margin: 10px;
             background: #ccc;
         }
     </style>
 </head>
 <body>
-<div id="div1">
-
-</div>
+<div id="div1"></div>
+<div id="div2"></div>
+<div id="div3">点击触发自定义事件</div>
 <script src="../dist/maruo.js"></script>
 <script>
     maruo.ready(function () {
@@ -23,6 +23,16 @@
         maruo(div1).on("click", function () {
             this.appendChild(document.createTextNode("click, off after"))
             maruo(this).off("click")
+        })
+
+        var div2 = document.getElementById("div2")
+        maruo(div2).on("custom", function () {
+            this.appendChild(document.createTextNode("trigger custom event"))
+        })
+
+        var div3 = document.getElementById("div3")
+        maruo(div3).on("click", function () {
+            maruo(div2).trigger("custom")
         })
     })
 </script>

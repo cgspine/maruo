@@ -85,12 +85,42 @@ export default function mixinEvent(maruo) {
         teardown(el, type)
     }
 
+    maruo.trigger = function (el, event) {
+        var data = maruo.data.cache(el),
+            parent = el.parentNode || el.ownerDocument
+        if (typeof event === 'string') {
+            event = {type: event, target: el}
+        }
+        event = fixEvent(event)
+        if (data.dispatcher) {
+            data.dispatcher(event)
+        }
+
+        if (parent && !event.isPropagationStopped) {
+            maruo.trigger(parent, event)
+        } else if (!parent && !event.isDefaultPrevented) {
+            // 冒泡结束后，如果有浏览器默认事件并且没有调用event.preventDefault，则触发浏览器默认事件
+            var target = event.target,
+                type = event.type,
+                targetData = maruo.data.cache(target)
+            if (target[type]) {
+                targetData.disabled = true
+                target[type]()
+                targetData.disabled = false
+            }
+        }
+    }
+
     maruo.prototype.on = function (type, fn) {
         maruo.on(this[0], type, fn)
     }
 
     maruo.prototype.off = function (type, fn) {
         maruo.off(this[0], type, fn)
+    }
+
+    maruo.prototype.trigger = function (event) {
+        maruo.trigger(this[0], event)
     }
 }
 
