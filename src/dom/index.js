@@ -1,16 +1,17 @@
 /**
  * Created by cgspine on 16/7/21.
  */
-import ready from './ready'
-import scan from './scan'
-import { WH, scroll, css, offset, offsetParent, position } from './css'
-import { attr, prop } from './attr'
-import { val } from './val'
+import ready from "./ready";
+import scan from "./scan";
+import {css, offset, offsetParent, position, scroll, WH} from "./css";
+import {attr, prop} from "./attr";
+import {val} from "./val";
 
 export default function mixinDom(maruo) {
-    maruo.shadowCopy(maruo.fn,WH)
+    maruo.ready = ready
+    maruo.shadowCopy(maruo.fn, WH)
     maruo.shadowCopy(maruo.fn, scroll)
-    maruo.shadowCopy(maruo.fn,{
+    maruo.shadowCopy(maruo.fn, {
         offset: function () {
             return offset(this[0])
         },
@@ -30,7 +31,7 @@ export default function mixinDom(maruo) {
             return attr(this[0], name, val)
         },
         val: function (value) {
-            if(value !== void 0){
+            if (value !== void 0) {
                 val(this[0], value)
                 return this
             } else {

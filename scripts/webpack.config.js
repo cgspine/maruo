@@ -6,7 +6,7 @@ var webpack = require('webpack')
 
 var path = require('path');
 var fs = require('fs')
-var json = require('./package.json')
+var json = require('./../package.json')
 
 var version =  json.version.split('.')
 

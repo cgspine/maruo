@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>测试Event</title>
+    <style>
+        div{
+            width: 100px;
+            height: 50px;
+            margin: 10px;
+            background: #ccc;
+        }
+    </style>
+</head>
+<body>
+<div id="div1">
+
+</div>
+<script src="../dist/maruo.js"></script>
+<script>
+    maruo.ready(function () {
+        var div1 = document.getElementById("div1")
+        maruo(div1).on("click", function () {
+            this.appendChild(document.createTextNode("click, off after"))
+            maruo(this).off("click")
+        })
+    })
+</script>
+</body>
+</html>

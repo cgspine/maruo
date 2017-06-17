@@ -27,6 +27,7 @@ Data.prototype = {
                 }
             }
         }
+        return value
     },
     set: function (owner, key, val) {
         var cache = this.cache(owner)

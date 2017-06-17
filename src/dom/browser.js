@@ -3,7 +3,7 @@
  */
 
 var browser = {
-    window: global,
+    window: window,
     document: { //方便在nodejs环境不会报错
         createElement: function () {
             return {}

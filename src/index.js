@@ -2,8 +2,6 @@
  * Created by cgspine on 16/7/9.
  */
 
-require('./lang')
-
 import maruo from "./maruo";
 import mixinData from "./data";
 import mixinCore from "./core";
